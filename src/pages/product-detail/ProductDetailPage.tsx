@@ -28,11 +28,12 @@ import {
 import { Product, ProductVariant } from '../../types/product-type';
 import { FEATURED_PRODUCTS } from '../../constants';
 import ProductInfoPanel from './ProductInfoPanel';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const ProductDetailPage: React.FC = () => {
   // Get the optional `id` route param as a string
   const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -308,7 +309,7 @@ const ProductDetailPage: React.FC = () => {
               className="inline-flex items-center text-emerald-700 hover:text-emerald-900 mb-6 transition-all duration-300 hover:translate-x-1"
             >
               <ArrowLeft size={18} className="mr-2" />
-              <span className="font-medium">Back to Tea Garden</span>
+              <span className="font-medium"><button onClick={() => navigate('/products')}>Back to Tea Garden</button></span>
             </div>
 
             {/* Product Header */}
