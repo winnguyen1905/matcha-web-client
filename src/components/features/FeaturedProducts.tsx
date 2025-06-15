@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, MapPin, ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../../constants';
 
 const FeaturedProducts = () => {
@@ -60,31 +61,39 @@ const FeaturedProducts = () => {
                   <div className="grid md:grid-cols-3 gap-8 px-2">
                     {products
                       .slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide)
-                      .map((product) => (
-                        <div 
+                      .map((product, index) => (
+                        <Link 
+                          to={`/product/${product.id}`}
                           key={product.id}
-                          className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group"
+                          className={`group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full ${
+                            index === 1 ? 'scale-105 z-10' : ''
+                          }`}
                         >
-                          {/* Product Image */}
-                          <div className="relative overflow-hidden h-64">
-                            <img
-                              src={product.image}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
-                            {/* Badge */}
-                            <div className={`absolute top-4 left-4 ${getBadgeColor(product.badge)} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg`}>
+                          {/* Badge */}
+                          {product.badge && (
+                            <div className={`absolute top-4 right-4 ${getBadgeColor(product.badge)} text-white text-xs font-bold px-3 py-1 rounded-full z-10`}>
                               {product.badge}
                             </div>
-                            {/* Origin */}
-                            <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-xs flex items-center">
-                              <MapPin size={12} className="mr-1" />
-                              {product.origin}
-                            </div>
-                            {/* Overlay */}
+                          )}
+                          
+                          {/* Product Image */}
+                          <div className="relative h-64 overflow-hidden">
+                            <img 
+                              src={product.image} 
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
                               <div className="w-full p-4 text-center">
-                                <button className="bg-white text-green-800 px-6 py-2 font-medium rounded-full hover:bg-green-50 transition-colors duration-200 flex items-center mx-auto">
+                                <button 
+                                  className="bg-white text-emerald-800 px-6 py-2 font-medium rounded-full hover:bg-emerald-50 transition-colors duration-200 flex items-center mx-auto"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    // Add to cart logic here
+                                  }}
+                                >
                                   <ShoppingCart size={16} className="mr-2" />
                                   ADD TO CART
                                 </button>
@@ -93,44 +102,35 @@ const FeaturedProducts = () => {
                           </div>
 
                           {/* Product Info */}
-                          <div className="p-5">
+                          <div className="p-5 flex-1 flex flex-col">
                             <h3 className="text-lg font-bold text-gray-900 mb-1">{product.name}</h3>
                             <div className="flex items-center text-sm text-gray-500 mb-3">
-                              <span className="text-green-700 font-medium">{product.origin}</span>
+                              <MapPin size={14} className="mr-1" />
+                              {product.origin}
                             </div>
                             
                             {/* Rating */}
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="mt-auto flex items-center justify-between">
                               <div className="flex items-center">
-                                <div className="flex mr-2">
+                                <div className="flex text-amber-400 mr-2">
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
                                       size={16}
-                                      fill={i < Math.floor(product.rating) ? '#f59e0b' : '#d1d5db'}
-                                      className={`${
-                                        i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'
-                                      }`}
+                                      fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'}
                                     />
                                   ))}
                                 </div>
                                 <span className="text-sm text-gray-500">
-                                  ({product.reviews} reviews)
+                                  ({product.reviews})
                                 </span>
                               </div>
-                              <button 
-                                className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-1.5 rounded-full transition-colors duration-200"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Add your inquiry logic here
-                                  alert(`Inquiry about ${product.name}`);
-                                }}
-                              >
-                                Inquire Now
-                              </button>
+                              <span className="text-emerald-600 font-medium">
+                                Contact Us
+                              </span>
                             </div>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                   </div>
                 </div>
@@ -167,10 +167,21 @@ const FeaturedProducts = () => {
         </div>
 
         {/* View All Products Button */}
-        <div className="text-center mt-12">
-          <button className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 font-medium transition-colors duration-200">
-            VIEW ALL PRODUCTS
-          </button>
+        <div className="w-full flex justify-center mt-12">
+          <div className="relative inline-block">
+            <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-green-500 to-blue-600 rounded-lg blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+            <button className="relative bg-gradient-to-br from-gray-900 to-gray-800 text-white px-10 py-3.5 font-medium transition-all duration-200 group overflow-hidden border border-gray-700/50 hover:border-gray-600/50 rounded-lg shadow-lg">
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <span className="relative flex items-center justify-center">
+                  <span className="absolute w-3 h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 to-blue-500 animate-[rgbPulse_3s_ease-in-out_infinite] shadow-[0_0_15px_5px_rgba(16,185,129,0.3)]"></span>
+                  <span className="absolute w-3 h-3 rounded-full bg-white/30 blur-[2px] animate-pulse"></span>
+                </span>
+                <span className="ml-1 text-white">VIEW ALL PRODUCTS</span>
+              </span>
+              <span className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-green-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            </button>
+          </div>
         </div>
       </div>
     </section>

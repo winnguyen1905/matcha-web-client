@@ -11,7 +11,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main>{children}</main>
+      <main className="pt-24">{children}</main>
       <Footer />
       <FloatingActionMenu />
     </div>
