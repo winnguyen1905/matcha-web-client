@@ -8,6 +8,7 @@ export default defineConfig({
     include: ['lucide-react'],
   },
   build: {
+    outDir: 'build',
     rollupOptions: {
       output: {
         manualChunks: {
