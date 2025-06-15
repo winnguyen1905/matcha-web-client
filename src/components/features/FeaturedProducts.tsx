@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, MapPin, ShoppingCart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../../constants';
 
 const FeaturedProducts = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { title, description, products } = FEATURED_PRODUCTS;
+  const navigate = useNavigate();
 
   const itemsPerSlide = 3;
   const totalSlides = Math.ceil(products.length / itemsPerSlide);
@@ -170,16 +171,24 @@ const FeaturedProducts = () => {
         <div className="w-full flex justify-center mt-12">
           <div className="relative inline-block">
             <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-green-500 to-blue-600 rounded-lg blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-            <button className="relative bg-gradient-to-br from-gray-900 to-gray-800 text-white px-10 py-3.5 font-medium transition-all duration-200 group overflow-hidden border border-gray-700/50 hover:border-gray-600/50 rounded-lg shadow-lg">
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <span className="relative flex items-center justify-center">
-                  <span className="absolute w-3 h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 to-blue-500 animate-[rgbPulse_3s_ease-in-out_infinite] shadow-[0_0_15px_5px_rgba(16,185,129,0.3)]"></span>
-                  <span className="absolute w-3 h-3 rounded-full bg-white/30 blur-[2px] animate-pulse"></span>
-                </span>
-                <span className="ml-1 text-white">VIEW ALL PRODUCTS</span>
-              </span>
-              <span className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-green-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-gray-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <button
+              onClick={() => navigate('/products')}
+              className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-3 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+            >
+              <span>VIEW ALL PRODUCTS</span>
+              <svg
+                className="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
             </button>
           </div>
         </div>

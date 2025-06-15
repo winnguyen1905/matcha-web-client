@@ -1,11 +1,20 @@
-export const APP_TITLE1 = "Quality Matcha, Better Everyday Moments";
-export const APP_TITLE2 = "Upgrade Your At-Home Matcha";
-export const APP_DESCRIPTION = "The difference is in the details—vibrant color, smooth flavor, and clean energy. Start your day with matcha that makes every sip feel special.";
-export const APP_DESCRIPTION2 = "Better matcha means better flavor, better energy, and a better start to your day";
-export const BACKGROUND_IMAGE1 = "https://scontent.fsgn2-9.fna.fbcdn.net/v/t39.30808-6/506458211_122132615270725253_1651286809710190997_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=106&ccb=1-7&_nc_sid=127cfc&_nc_ohc=SrzhSauFgLkQ7kNvwFwfO1s&_nc_oc=Adm31Bt5m_6KMZd4ZbR8ept9_EOIRIvt7eygwzrUaZjnX90AjNHO6i2a-duR3DOBERM&_nc_zt=23&_nc_ht=scontent.fsgn2-9.fna&_nc_gid=d-kLeZ9P8FCJuivirry6Ng&oh=00_AfM19nswpzJQ3vGM5JgMYRkAUTtKSZNi0YGqkqX0ejbKSA&oe=68523867";
-export const BACKGROUND_IMAGE2 = "https://scontent.fsgn2-10.fna.fbcdn.net/v/t39.30808-6/506468230_122132615432725253_2278882615411259411_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=ORITep6omwkQ7kNvwHbMZnF&_nc_oc=AdnJtMA_Fsu2TwCh8n6E8abCz4qcrnjWIDDN7r408XU8d__CHKE2-ggPNXcZ1DRuvHM&_nc_zt=23&_nc_ht=scontent.fsgn2-10.fna&_nc_gid=SESvmBwtbW1PeH9sfaXxlQ&oh=00_AfNFhbBpe4ZdauZ2-vZWk97Tgv6jGlxwIMVeZiNLlcbs3w&oe=68521DF8";
+import type { 
+  AppConstants, 
+  HeroProfiles, 
+  NavigationItem, 
+  SocialLinks, 
+  FeaturedProducts, 
+  Services 
+} from '../types/app-types';
 
-export const HERO_PROFILES = {
+export const APP_TITLE1: string = "Quality Matcha, Better Everyday Moments";
+export const APP_TITLE2: string = "Upgrade Your At-Home Matcha";
+export const APP_DESCRIPTION: string = "The difference is in the details—vibrant color, smooth flavor, and clean energy. Start your day with matcha that makes every sip feel special.";
+export const APP_DESCRIPTION2: string = "Better matcha means better flavor, better energy, and a better start to your day";
+export const BACKGROUND_IMAGE1: string = "https://scontent.fsgn2-9.fna.fbcdn.net/v/t39.30808-6/506458211_122132615270725253_1651286809710190997_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=106&ccb=1-7&_nc_sid=127cfc&_nc_ohc=SrzhSauFgLkQ7kNvwFwfO1s&_nc_oc=Adm31Bt5m_6KMZd4ZbR8ept9_EOIRIvt7eygwzrUaZjnX90AjNHO6i2a-duR3DOBERM&_nc_zt=23&_nc_ht=scontent.fsgn2-9.fna&_nc_gid=d-kLeZ9P8FCJuivirry6Ng&oh=00_AfM19nswpzJQ3vGM5JgMYRkAUTtKSZNi0YGqkqX0ejbKSA&oe=68523867";
+export const BACKGROUND_IMAGE2: string = "https://scontent.fsgn2-10.fna.fbcdn.net/v/t39.30808-6/506468230_122132615432725253_2278882615411259411_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=ORITep6omwkQ7kNvwHbMZnF&_nc_oc=AdnJtMA_Fsu2TwCh8n6E8abCz4qcrnjWIDDN7r408XU8d__CHKE2-ggPNXcZ1DRuvHM&_nc_zt=23&_nc_ht=scontent.fsgn2-10.fna&_nc_gid=SESvmBwtbW1PeH9sfaXxlQ&oh=00_AfNFhbBpe4ZdauZ2-vZWk97Tgv6jGlxwIMVeZiNLlcbs3w&oe=68521DF8";
+
+export const HERO_PROFILES: HeroProfiles = {
   profile1: {
     title: APP_TITLE1,
     description: APP_DESCRIPTION,
@@ -25,7 +34,7 @@ export const HERO_PROFILES = {
     backgroundImage: BACKGROUND_IMAGE2,
     button1: {
       text: "SHOP NOW",
-      action: "products"
+      action: "products",
     },
     button2: {
       text: "LEARN MORE",
@@ -34,20 +43,20 @@ export const HERO_PROFILES = {
   }
 };
 
-export const NAVIGATION_ITEMS = [
+export const NAVIGATION_ITEMS: NavigationItem[] = [
   { name: 'HOME', id: 'home' },
   { name: 'ABOUT', id: 'about' },
   { name: 'SERVICES', id: 'services' },
   { name: 'CONTACT', id: 'contact' }
 ];
 
-export const SOCIAL_LINKS = {
+export const SOCIAL_LINKS: SocialLinks = {
   facebook: '#',
   instagram: '#',
   twitter: '#'
 };
 
-export const FEATURED_PRODUCTS = {
+export const FEATURED_PRODUCTS: FeaturedProducts = {
   title: "PREMIUM MATCHA COLLECTION",
   description: "Experience the finest Japanese matcha teas, carefully selected for their exceptional quality and authentic flavor profiles.",
   products: [
@@ -81,6 +90,8 @@ export const FEATURED_PRODUCTS = {
       storageInstructions: 'Store in a cool, dark place away from moisture and strong odors',
       isLimitedEdition: false,
       isSubscriptionAvailable: true,
+      price: 45.99,
+      stock: 50,
       variants: [
         {
           id: 101,
@@ -90,7 +101,19 @@ export const FEATURED_PRODUCTS = {
           stock: 50,
           sku: 'MCH-001-30',
           weight: 30,
-          isAvailable: true
+          isAvailable: true,
+          dimensions: {
+            length: 8,
+            width: 8,
+            height: 12
+          },
+          shippingWeight: 0.4,
+          isBestSeller: true,
+          discountPercentage: 0,
+          bulkPricing: [
+            { minQuantity: 3, price: 42.99 },
+            { minQuantity: 5, price: 39.99 }
+          ]
         },
         {
           id: 102,
@@ -100,7 +123,18 @@ export const FEATURED_PRODUCTS = {
           stock: 30,
           sku: 'MCH-001-60',
           weight: 60,
-          isAvailable: true
+          isAvailable: true,
+          dimensions: {
+            length: 10,
+            width: 10,
+            height: 15
+          },
+          shippingWeight: 0.7,
+          discountPercentage: 10,
+          bulkPricing: [
+            { minQuantity: 3, price: 74.99 },
+            { minQuantity: 5, price: 69.99 }
+          ]
         }
       ],
       features: [
@@ -112,7 +146,73 @@ export const FEATURED_PRODUCTS = {
           title: 'Stone Ground',
           description: 'Slowly ground on granite stone mills for perfect texture'
         }
-      ]
+      ],
+      grade: 'Ceremonial',
+      harvestDate: 'Spring 2024',
+      processingMethod: 'Traditional stone grinding',
+      shelfLife: '12 months',
+      allergens: ['None'],
+      nutritionalInfo: {
+        calories: 5,
+        protein: 1,
+        carbohydrates: 1,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+        caffeine: 35
+      },
+      brewingInstructions: {
+        traditional: 'Use 2g matcha, 70ml water at 80°C. Whisk in "W" motion until frothy.',
+        modern: 'Mix 1g matcha with 30ml water, then add 150ml milk or water.',
+        iced: 'Dissolve 2g matcha in 30ml hot water, add ice and cold water.'
+      },
+      tasteProfile: {
+        sweetness: 4,
+        bitterness: 2,
+        umami: 5,
+        astringency: 1
+      },
+      sustainability: {
+        isEcoFriendly: true,
+        packagingRecyclable: true,
+        carbonNeutral: true,
+        fairTrade: true
+      },
+      awards: [
+        {
+          name: 'Best Matcha 2024',
+          year: 2024,
+          organization: 'Japan Tea Association'
+        },
+        {
+          name: 'Gold Medal',
+          year: 2023,
+          organization: 'World Tea Awards'
+        }
+      ],
+      tags: ['ceremonial', 'premium', 'organic', 'japanese'],
+      videoUrl: 'https://example.com/matcha-preparation',
+      faq: [
+        {
+          question: 'How should I store my matcha?',
+          answer: 'Store in a cool, dark place away from moisture and strong odors. Refrigeration is recommended after opening.'
+        },
+        {
+          question: 'What is the difference between ceremonial and culinary grade?',
+          answer: 'Ceremonial grade is the highest quality, meant for drinking as tea. Culinary grade is for cooking and baking.'
+        }
+      ],
+      shippingInfo: {
+        weight: 0.4,
+        dimensions: {
+          length: 8,
+          width: 8,
+          height: 12
+        },
+        freeShippingThreshold: 100,
+        estimatedDeliveryTime: '2-3 business days'
+      }
     },
     {
       id: 2,
@@ -144,6 +244,8 @@ export const FEATURED_PRODUCTS = {
       storageInstructions: 'Keep refrigerated after opening for maximum freshness',
       isLimitedEdition: true,
       isSubscriptionAvailable: false,
+      price: 89.99,
+      stock: 25,
       variants: [
         {
           id: 201,
@@ -207,6 +309,8 @@ export const FEATURED_PRODUCTS = {
       storageInstructions: 'Store in a cool, dark place away from moisture',
       isLimitedEdition: false,
       isSubscriptionAvailable: true,
+      price: 49.99,
+      stock: 40,
       variants: [
         {
           id: 301,
@@ -270,6 +374,8 @@ export const FEATURED_PRODUCTS = {
       storageInstructions: 'Refrigerate after opening for maximum freshness',
       isLimitedEdition: true,
       isSubscriptionAvailable: false,
+      price: 99.99,
+      stock: 20,
       variants: [
         {
           id: 401,
@@ -333,6 +439,8 @@ export const FEATURED_PRODUCTS = {
       storageInstructions: 'Store in a cool, dry place away from light',
       isLimitedEdition: false,
       isSubscriptionAvailable: true,
+      price: 39.99,
+      stock: 45,
       variants: [
         {
           id: 501,
@@ -366,10 +474,15 @@ export const FEATURED_PRODUCTS = {
         }
       ]
     }
-  ]
+  ],
+  displayType: 'grid',
+  maxItems: 5,
+  sortBy: 'rating',
+  category: 'Matcha',
+  tags: ['premium', 'ceremonial', 'japanese']
 };
 
-export const SERVICES = {
+export const SERVICES: Services = {
   title: "OUR SERVICES",
   description: "We offer a comprehensive range of services designed to meet all your needs with professionalism and care.",
   services: [
@@ -394,4 +507,19 @@ export const SERVICES = {
       description: 'Expert advice and personalized recommendations for your matcha journey'
     }
   ]
+};
+
+// Export all constants as a single object
+export const APP_CONSTANTS: AppConstants = {
+  APP_TITLE1,
+  APP_TITLE2,
+  APP_DESCRIPTION,
+  APP_DESCRIPTION2,
+  BACKGROUND_IMAGE1,
+  BACKGROUND_IMAGE2,
+  HERO_PROFILES,
+  NAVIGATION_ITEMS,
+  SOCIAL_LINKS,
+  FEATURED_PRODUCTS,
+  SERVICES
 }; 

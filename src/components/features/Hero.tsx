@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { HERO_PROFILES } from '../../constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
   const [currentProfile, setCurrentProfile] = useState<'profile1' | 'profile2'>('profile1');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isShrunk, setIsShrunk] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,8 +31,12 @@ const Hero = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleScroll = (sectionId: string) => {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  const handleAction = (action: string) => {
+    if (action === 'products') {
+      navigate('/products');
+    } else {
+      document.getElementById(action)?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const profile = HERO_PROFILES[currentProfile];
@@ -118,7 +124,7 @@ const Hero = () => {
             <motion.button 
               whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(20, 184, 166, 0.4)' }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => handleScroll(profile.button1.action)}
+              onClick={() => handleAction(profile.button1.action)}
               className="relative overflow-hidden bg-gradient-to-r from-teal-500 to-emerald-500 text-white px-8 py-3.5 font-medium rounded-full transition-all duration-300 hover:shadow-lg hover:from-teal-600 hover:to-emerald-600"
             >
               <span className="relative z-10">{profile.button1.text}</span>
@@ -127,7 +133,7 @@ const Hero = () => {
             <motion.button 
               whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(20, 184, 166, 0.4)' }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => handleScroll(profile.button2.action)}
+              onClick={() => handleAction(profile.button2.action)}
               className="relative overflow-hidden bg-transparent text-white px-8 py-3.5 font-medium rounded-full border-2 border-teal-400/50 hover:border-teal-300 transition-all duration-300 hover:bg-teal-500/10"
             >
               <span className="relative z-10">{profile.button2.text}</span>

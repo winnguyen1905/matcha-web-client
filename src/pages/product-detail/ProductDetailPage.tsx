@@ -21,10 +21,13 @@ import {
   Clock3,
   PackageOpen,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  X,
+  Info
 } from 'lucide-react';
-import { Product, ProductVariant } from '../types/product-type';
-import { FEATURED_PRODUCTS } from '../constants';
+import { Product, ProductVariant } from '../../types/product-type';
+import { FEATURED_PRODUCTS } from '../../constants';
+import ProductInfoPanel from './ProductInfoPanel';
 
 const ProductDetailPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<number>(0);
@@ -35,26 +38,74 @@ const ProductDetailPage: React.FC = () => {
   const leafRefs = useRef<Array<SVGSVGElement | null>>([]);
   const detailsRef = useRef<HTMLDivElement>(null);
   const relatedRef = useRef<HTMLDivElement>(null);
+  const [showEditForm, setShowEditForm] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState<Partial<Product>>({});
+  const [showInfoPanel, setShowInfoPanel] = useState<boolean>(false);
 
   // Get product data from constants
   const productData = FEATURED_PRODUCTS.products[0];
-  // Create a product object with all required properties
-  const product: Product = {
+  
+  // Helper function to safely access product data
+  const getProductData = () => ({
     ...productData,
     price: productData.variants?.[0]?.price || 0,
     caffeineLevel: (productData.caffeineLevel as 'None' | 'Low' | 'Medium' | 'High' | undefined) || 'Medium',
-    // Use an empty array for features to avoid circular references
     features: [],
-    stock: productData.variants?.[0]?.stock || 0
+    stock: productData.variants?.[0]?.stock || 0,
+    flavorNotes: productData.flavorNotes || [],
+    healthBenefits: productData.healthBenefits || [],
+    certifications: productData.certifications || [],
+    awards: productData.awards || [],
+    faq: productData.faq || [],
+    brewingInstructions: productData.brewingInstructions || {
+      traditional: '',
+      modern: '',
+      iced: ''
+    },
+    sustainability: productData.sustainability || {
+      isEcoFriendly: false,
+      packagingRecyclable: false,
+      carbonNeutral: false,
+      fairTrade: false
+    }
+  });
+
+  // Helper function to safely format dates
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString();
   };
 
-  const productImages: string[] = product.gallery || [product.image];
+  // Helper function to safely access feature properties
+  const getFeatureProps = (feature: any) => ({
+    title: feature?.title || '',
+    description: feature?.description || ''
+  });
+
+  // Helper function to safely access array properties
+  const safeArray = function<T>(arr: T[] | undefined): T[] {
+    return arr || [];
+  };
+
+  // Create a product object with all required properties
+  const productImages: string[] = getProductData().gallery || [getProductData().image];
+
+  // Use safeArray for array operations
+  const flavorNotes = getProductData().flavorNotes;
+  const certifications = getProductData().certifications;
+  const features = getProductData().features;
+  const healthBenefits = getProductData().healthBenefits;
+  const awards = getProductData().awards;
+  const faq = getProductData().faq;
+  const brewingInstructions = getProductData().brewingInstructions;
+  const sustainability = getProductData().sustainability;
+
   const relatedProducts = FEATURED_PRODUCTS.products.slice(1, 5).map(({ id, name, image, variants }: { id: number; name: string; image: string; variants: ProductVariant[] }) => ({
     id,
     name,
     image,
     price: variants?.[0]?.price || 0
-  }));
+  })); 
 
   useEffect(() => {
     // Simulating GSAP animations with CSS transitions and transforms
@@ -225,7 +276,7 @@ const ProductDetailPage: React.FC = () => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 leaf-pattern relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 leaf-pattern relative overflow-hidden pt-24">
         {/* Floating Decorative Elements */}
         <div className="absolute inset-0 pointer-events-none">
           <Leaf
@@ -265,7 +316,7 @@ const ProductDetailPage: React.FC = () => {
                   <div className="w-full h-full flex items-center justify-center">
                     <img
                       src={productImages[selectedImage]}
-                      alt={product.name}
+                      alt={getProductData().name}
                       className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
                       style={{ maxHeight: '100%', maxWidth: '100%' }}
                     />
@@ -313,7 +364,7 @@ const ProductDetailPage: React.FC = () => {
                       <div className="w-full h-full flex items-center justify-center">
                         <img
                           src={img}
-                          alt={`${product.name} ${idx + 1}`}
+                          alt={`${getProductData().name} ${idx + 1}`}
                           className="w-full h-full object-contain"
                           style={{ maxHeight: '100%', maxWidth: '100%' }}
                         />
@@ -331,24 +382,25 @@ const ProductDetailPage: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <div className="flex text-amber-400">
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={20} fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'} className="drop-shadow-sm" />
+                          <Star key={i} size={20} fill={i < Math.floor(getProductData().rating) ? 'currentColor' : 'none'} className="drop-shadow-sm" />
                         ))}
                       </div>
-                      <span className="text-sm text-gray-600 font-medium">({product.reviews} reviews)</span>
-                      {product.badge && (
+                      <span className="text-sm text-gray-600 font-medium">({getProductData().reviews} reviews)</span>
+                      <Award className="ml-3 text-emerald-600" size={20} />
+                      {getProductData().badge && (
                         <span className="inline-block bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-medium">
-                          {product.badge}
+                          {getProductData().badge}
                         </span>
                       )}
                     </div>
 
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text leading-tight">
-                      {product.name}
+                    <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text leading-tight">
+                      {getProductData().name}
                     </h1>
                   </div>
 
                   {/* Description */}
-                  <p className="text-gray-700 text-lg leading-relaxed">{product.description}</p>
+                  <p className="text-gray-700 text-lg leading-relaxed">{getProductData().description}</p>
 
                   {/* Benefits Section */}
                   <div className="grid grid-cols-2 gap-4">
@@ -379,25 +431,58 @@ const ProductDetailPage: React.FC = () => {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="opacity-90">• Origin: {product.origin}</p>
+                          <p className="opacity-90">• Origin: {getProductData().origin}</p>
                           <p className="opacity-90">• Harvest: First flush spring leaves</p>
                           <p className="opacity-90">• Processing: Traditional stone mill</p>
                         </div>
                         <div>
-                          <p className="opacity-90">• Net Weight: {product.weight}g</p>
+                          <p className="opacity-90">• Net Weight: {getProductData().weight}g</p>
                           <p className="opacity-90">• Best by: 18 months</p>
-                          <p className="opacity-90">• Storage: {product.storageInstructions}</p>
+                          <p className="opacity-90">• Storage: {getProductData().storageInstructions}</p>
                         </div>
                       </div>
                     </div>
                   </div>
+                  
+                  {getProductData().variants && getProductData().variants.length > 0 && (
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mt-10 mb-8">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-6">Available Variants</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        {getProductData().variants.map((variant) => (
+                          <div key={variant.id} className="border rounded-lg p-5 hover:border-emerald-300 transition-all duration-200 hover:shadow-sm">
+                            <div className="font-medium text-gray-900">{variant.name}</div>
+                            <div className="mt-1 flex items-baseline">
+                              <span className="text-emerald-600 font-semibold">${variant.price.toFixed(2)}</span>
+                              {variant.price && (
+                                <span className="ml-2 text-sm text-gray-500 line-through">${variant.price.toFixed(2)}</span>
+                              )}
+                            </div>
+                            <div className="mt-3 space-y-2 text-sm text-gray-500">
+                              {variant.weight && <div className="flex items-center">
+                                <Scale className="h-4 w-4 mr-2 text-gray-400" />
+                                <span>Weight: {variant.weight}g</span>
+                              </div>}
+                              {variant.packaging && <div className="flex items-center">
+                                <Package className="h-4 w-4 mr-2 text-gray-400" />
+                                <span>Packaging: {variant.packaging}</span>
+                              </div>}
+                              <div className={`flex items-center mt-3 text-sm ${variant.isAvailable ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                <div className={`h-2 w-2 rounded-full mr-2 ${variant.isAvailable ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                {variant.isAvailable ? 'In Stock' : 'Out of Stock'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Price and Quantity */}
                   <div className="flex items-center justify-between">
                     <div className="text-center">
                       <p className="text-sm text-gray-600 mb-1">Premium Quality</p>
                       <span className="text-3xl font-bold text-emerald-600">
-                        Liên hệ
+                        Contact Us
                       </span>
                     </div>
 
@@ -427,31 +512,70 @@ const ProductDetailPage: React.FC = () => {
                     <button className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group">
                       <Heart size={22} className="text-emerald-600 group-hover:fill-current" />
                     </button>
+                    <button 
+                      onClick={() => setShowInfoPanel(true)}
+                      className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2"
+                    >
+                      <Info size={22} className="text-emerald-600" />
+                      <span className="font-semibold text-emerald-700 group-hover:text-emerald-900 transition-colors">View Detail</span>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
+            
             {/* Product Details Tabs */}
             <div className="mt-12" ref={detailsRef}>
               <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
+                {/* <nav className="-mb-px flex space-x-8">{product.variants && product.variants.length > 0 && (
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mt-10 mb-8">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-6">Available Variants</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        {product.variants.map((variant) => (
+                          <div key={variant.id} className="border rounded-lg p-5 hover:border-emerald-300 transition-all duration-200 hover:shadow-sm">
+                            <div className="font-medium text-gray-900">{variant.name}</div>
+                            <div className="mt-1 flex items-baseline">
+                              <span className="text-emerald-600 font-semibold">${variant.price.toFixed(2)}</span>
+                              {variant.salePrice && (
+                                <span className="ml-2 text-sm text-gray-500 line-through">${variant.salePrice.toFixed(2)}</span>
+                              )}
+                            </div>
+                            <div className="mt-3 space-y-2 text-sm text-gray-500">
+                              {variant.weight && <div className="flex items-center">
+                                <Scale className="h-4 w-4 mr-2 text-gray-400" />
+                                <span>Weight: {variant.weight}g</span>
+                              </div>}
+                              {variant.packaging && <div className="flex items-center">
+                                <Package className="h-4 w-4 mr-2 text-gray-400" />
+                                <span>Packaging: {variant.packaging}</span>
+                              </div>}
+                              <div className={`flex items-center mt-3 text-sm ${variant.isAvailable ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                <div className={`h-2 w-2 rounded-full mr-2 ${variant.isAvailable ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                {variant.isAvailable ? 'In Stock' : 'Out of Stock'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <button className="tab-active py-4 px-1 border-b-2 font-medium text-sm">
                     Product Details
                   </button>
-                </nav>
+                </nav> */}
               </div>
 
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-6">
                   {/* Flavor Profile */}
-                  {product.flavorNotes && product.flavorNotes.length > 0 && renderDetailSection(
+                  {flavorNotes.length > 0 && renderDetailSection(
                     'Flavor Profile',
                     <Coffee className="h-5 w-5" />,
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        {product.flavorNotes.map((note, index) => (
+                        {flavorNotes.map((note, index) => (
                           <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
                             {note}
                           </span>
@@ -464,71 +588,77 @@ const ProductDetailPage: React.FC = () => {
                   {renderDetailSection(
                     'Ingredients',
                     <LeafyGreen className="h-5 w-5" />,
-                    renderListWithIcons(product.ingredients, <CheckCircle2 className="h-4 w-4" />)
+                    renderListWithIcons(getProductData().ingredients, <CheckCircle2 className="h-4 w-4" />)
                   )}
 
                   {/* Health Benefits */}
                   {renderDetailSection(
                     'Health Benefits',
                     <Shield className="h-5 w-5" />,
-                    renderListWithIcons(product.healthBenefits, <CheckCircle2 className="h-4 w-4" />, 'green')
+                    renderListWithIcons(healthBenefits, <CheckCircle2 className="h-4 w-4" />, 'green')
                   )}
                 </div>
 
                 {/* Right Column */}
                 <div className="space-y-6">
                   {/* Brewing Instructions */}
-                  {(product.brewingTemperature || product.brewingTime) && renderDetailSection(
+                  {((brewingInstructions.traditional || brewingInstructions.modern || brewingInstructions.iced) && renderDetailSection(
                     'Brewing Instructions',
                     <TeaLeaf className="h-5 w-5" />,
                     <div className="space-y-4">
-                      {product.brewingTemperature && (
+                      {brewingInstructions.traditional && (
                         <div className="flex items-center">
-                          <Thermometer className="h-5 w-5 text-emerald-500 mr-2" />
-                          <span className="text-gray-700">Temperature: {product.brewingTemperature}</span>
+                          <p className="text-gray-700">Traditional Method</p>
+                          <p className="text-gray-600">{brewingInstructions.traditional}</p>
                         </div>
                       )}
-                      {product.brewingTime && (
+                      {brewingInstructions.modern && (
                         <div className="flex items-center">
-                          <Clock3 className="h-5 w-5 text-emerald-500 mr-2" />
-                          <span className="text-gray-700">Brewing Time: {product.brewingTime}</span>
+                          <p className="text-gray-700">Modern Method</p>
+                          <p className="text-gray-600">{brewingInstructions.modern}</p>
+                        </div>
+                      )}
+                      {brewingInstructions.iced && (
+                        <div className="flex items-center">
+                          <p className="text-gray-700">Iced Method</p>
+                          <p className="text-gray-600">{brewingInstructions.iced}</p>
                         </div>
                       )}
                     </div>
-                  )}
+                  ))}
 
                   {/* Packaging & Storage */}
-                  {(product.packaging || product.storageInstructions) && renderDetailSection(
+                  {((getProductData().packaging || getProductData().storageInstructions) && renderDetailSection(
                     'Packaging & Storage',
                     <PackageOpen className="h-5 w-5" />,
                     <div className="space-y-3">
-                      {product.packaging && (
+                      {getProductData().packaging && (
                         <div className="flex items-start">
                           <Package className="h-5 w-5 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">Packaging: {product.packaging}</span>
+                          <span className="text-gray-700">Packaging: {getProductData().packaging}</span>
                         </div>
                       )}
-                      {product.storageInstructions && (
+                      {getProductData().storageInstructions && (
                         <div className="flex items-start">
                           <RefreshCw className="h-5 w-5 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">Storage: {product.storageInstructions}</span>
+                          <span className="text-gray-700">Storage: {getProductData().storageInstructions}</span>
                         </div>
                       )}
-                      {product.servingsPerPackage && (
+                      {getProductData().servingsPerPackage && (
                         <div className="flex items-center">
                           <Users className="h-5 w-5 text-emerald-500 mr-2" />
-                          <span className="text-gray-700">Servings: {product.servingsPerPackage} per package</span>
+                          <span className="text-gray-700">Servings: {getProductData().servingsPerPackage} per package</span>
                         </div>
                       )}
                     </div>
-                  )}
+                  ))}
 
                   {/* Certifications */}
-                  {product.certifications && product.certifications.length > 0 && renderDetailSection(
+                  {certifications.length > 0 && renderDetailSection(
                     'Certifications',
                     <Award className="h-5 w-5" />,
                     <div className="flex flex-wrap gap-2">
-                      {product.certifications.map((cert, index) => (
+                      {certifications.map((cert, index) => (
                         <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                           {cert}
                         </span>
@@ -544,16 +674,19 @@ const ProductDetailPage: React.FC = () => {
 
 
                 {/* Product Features */}
-                {product.features && product.features.length > 0 && (
+                {features.length > 0 && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Featured Collections</h3>
                     <div className="space-y-4">
-                      {product.features.map((feature, index) => (
-                        <div key={index} className="border-l-4 border-emerald-500 pl-4 py-1">
-                          <h4 className="font-medium text-gray-900">{feature.title}</h4>
-                          <p className="text-sm text-gray-600">{feature.description}</p>
-                        </div>
-                      ))}
+                      {features.map((feature, index) => {
+                        const { title, description } = getFeatureProps(feature);
+                        return (
+                          <div key={index} className="border-l-4 border-emerald-500 pl-4 py-1">
+                            <h4 className="font-medium text-gray-900">{title}</h4>
+                            <p className="text-sm text-gray-600">{description}</p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -561,197 +694,30 @@ const ProductDetailPage: React.FC = () => {
 
               {/* Additional Metadata */}
               <div className="mt-6 text-xs text-gray-500 flex flex-wrap gap-4">
-                {product.createdAt && (
+                {getProductData().createdAt && (
                   <div className="flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
-                    <span>Added on: {new Date(product.createdAt).toLocaleDateString()}</span>
+                    <span>Added on: {formatDate(getProductData().createdAt)}</span>
                   </div>
                 )}
-                {product.updatedAt && product.updatedAt !== product.createdAt && (
+                {getProductData().updatedAt && getProductData().updatedAt !== getProductData().createdAt && (
                   <div className="flex items-center">
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    <span>Updated: {new Date(product.updatedAt).toLocaleDateString()}</span>
+                    <span>Updated: {formatDate(getProductData().updatedAt)}</span>
                   </div>
                 )}
-                {product.isLimitedEdition && (
+                {getProductData().isLimitedEdition && (
                   <div className="flex items-center">
                     <Award className="h-3 w-3 mr-1" />
                     <span>Limited Edition</span>
                   </div>
                 )}
-                {product.isSubscriptionAvailable && (
+                {getProductData().isSubscriptionAvailable && (
                   <div className="flex items-center">
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    <span>Subscription Available</span>
+                    <span>Related Product</span>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Main Product Section */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-3xl nature-shadow overflow-hidden border border-green-100">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
-                {/* Product Images */}
-                <div ref={imageRef} className="md:w-1/2 flex-shrink-0">
-                  <div className="relative h-96 lg:h-[500px] bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl overflow-hidden mb-6 group border-2 border-emerald-200/50 shadow-lg hover:border-emerald-300/70 transition-all duration-300">
-                    <div className="absolute inset-0 shimmer-effect opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <div className="w-full h-full flex items-center justify-center">
-                      <img
-                        src={productImages[selectedImage]}
-                        alt={product.name}
-                        className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
-                        style={{ maxHeight: '100%', maxWidth: '100%' }}
-                      />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-
-                    <button
-                      onClick={() => setSelectedImage(prev => (prev - 1 + productImages.length) % productImages.length)}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-300 border border-emerald-100"
-                    >
-                      <ChevronLeft size={20} className="text-emerald-600" />
-                    </button>
-                    <button
-                      onClick={() => setSelectedImage(prev => (prev + 1) % productImages.length)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-300 border border-emerald-100"
-                    >
-                      <ChevronRight size={20} className="text-emerald-600" />
-                    </button>
-
-                    {/* Image indicators */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                      {productImages.map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setSelectedImage(idx)}
-                          className={`w-3 h-3 rounded-full transition-all duration-300 ${selectedImage === idx
-                            ? 'bg-white scale-125 ring-2 ring-emerald-300'
-                            : 'bg-white/50 hover:bg-white/75'
-                            }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 overflow-x-auto pb-2">
-                    {productImages.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedImage(idx)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 hover:scale-105 ${selectedImage === idx
-                          ? 'border-emerald-500 shadow-lg ring-2 ring-emerald-200'
-                          : 'border-emerald-100 hover:border-emerald-300'
-                          }`}
-                      >
-                        <div className="w-full h-full flex items-center justify-center">
-                          <img
-                            src={img}
-                            alt={`${product.name} ${idx + 1}`}
-                            className="w-full h-full object-contain"
-                            style={{ maxHeight: '100%', maxWidth: '100%' }}
-                          />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Product Info */}
-                <div ref={infoRef} className="py-4">
-                  <div className="flex items-center mb-4">
-                    <div className="flex text-amber-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={20} fill={i < 4 ? 'currentColor' : 'none'} className="drop-shadow-sm" />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600 ml-3 font-medium">(47 reviews)</span>
-                    <Award className="ml-3 text-emerald-600" size={20} />
-                  </div>
-
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text mb-4 leading-tight">
-                    {product.name}
-                  </h1>
-                  <p className="text-gray-700 mb-8 text-lg leading-relaxed">{product.description}</p>
-
-                  {/* Benefits Section */}
-                  <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="flex items-center p-3 bg-green-50 rounded-xl border border-green-100">
-                      <Leaf className="text-green-600 mr-3" size={20} />
-                      <span className="text-sm font-medium text-green-800">100% Organic</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <Coffee className="text-emerald-600 mr-3" size={20} />
-                      <span className="text-sm font-medium text-emerald-800">Stone Ground</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-teal-50 rounded-xl border border-teal-100">
-                      <Shield className="text-teal-600 mr-3" size={20} />
-                      <span className="text-sm font-medium text-teal-800">Premium Grade</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-green-50 rounded-xl border border-green-100">
-                      <Award className="text-green-600 mr-3" size={20} />
-                      <span className="text-sm font-medium text-green-800">Ceremonial</span>
-                    </div>
-                  </div>
-
-                  <div
-                    ref={detailsRef}
-                    className="matcha-gradient p-6 rounded-2xl mb-8 text-white relative overflow-hidden"
-                  >
-                    <div className="relative z-10">
-                      <h3 className="font-bold text-white mb-4 text-lg flex items-center">
-                        <Leaf className="mr-2" size={20} />
-                        From Nature to Cup
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="opacity-90">• Origin: Uji, Kyoto Prefecture</p>
-                          <p className="opacity-90">• Harvest: First flush spring leaves</p>
-                          <p className="opacity-90">• Processing: Traditional stone mill</p>
-                        </div>
-                        <div>
-                          <p className="opacity-90">• Net Weight: 30g tin</p>
-                          <p className="opacity-90">• Best by: 18 months</p>
-                          <p className="opacity-90">• Storage: Cool, dark place</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-1">Premium Quality</p>
-                      <span className="text-3xl font-bold text-emerald-600">
-                        Liên hệ
-                      </span>
-                    </div>
-
-                    <div className="flex items-center bg-white border-2 border-emerald-200 rounded-full overflow-hidden shadow-md">
-                      <button
-                        onClick={() => handleQuantityChange(-1)}
-                        className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 transition-colors text-emerald-700 font-bold"
-                      >
-                        −
-                      </button>
-                      <span className="w-12 text-center font-semibold text-gray-800">{quantity}</span>
-                      <button
-                        onClick={() => handleQuantityChange(1)}
-                        className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 transition-colors text-emerald-700 font-bold"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                      <ShoppingCart size={22} />
-                      Thêm vào giỏ hàng
-                    </button>
-                    <button className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group">
-                      <Heart size={22} className="text-emerald-600 group-hover:fill-current" />
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -789,6 +755,20 @@ const ProductDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Product Information Panel */}
+      <ProductInfoPanel
+        show={showInfoPanel}
+        onClose={() => setShowInfoPanel(false)}
+        getProductData={getProductData}
+        flavorNotes={flavorNotes}
+        brewingInstructions={brewingInstructions}
+        healthBenefits={healthBenefits}
+        certifications={certifications}
+        awards={awards}
+        sustainability={sustainability}
+        faq={faq}
+      />
     </>
   );
 };

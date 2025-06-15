@@ -36,6 +36,7 @@
     "dotenv": "^16.4.4",
     "emoji-picker-react": "^4.7.16",
     "framer-motion": "^11.18.2",
+    "gsap": "^3.13.0",
     "humps": "^2.0.1",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",

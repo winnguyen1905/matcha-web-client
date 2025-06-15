@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,6 +16,29 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleNavigation = (id: string) => {
+    setIsMobileMenuOpen(false);
+    switch (id) {
+      case 'home':
+        navigate('/');
+        break;
+      case 'about':
+        navigate('/about');
+        break;
+      case 'products':
+        navigate('/products');
+        break;
+      case 'services':
+        navigate('/services');
+        break;
+      case 'contact':
+        navigate('/contact');
+        break;
+      default:
+        scrollToSection(id);
+    }
+  };
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -23,101 +48,192 @@ const Header = () => {
   };
 
   return (
-    <header className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-sm shadow-sm' : 'bg-transparent'
-      }`}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20 md:h-24 px-4 md:px-6 lg:px-8">
-          {/* Logo */}
-          <div
-            className="flex-shrink-0 cursor-pointer group flex items-center space-x-3"
-            onClick={() => scrollToSection('home')}
-          >
-            <div className="relative">
-              {/* Glow effect */}
-              <span className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full blur opacity-20 group-hover:opacity-30 transition-all duration-300 group-hover:duration-200"></span>
-              {/* Logo with white background */}
-              <div className="relative bg-white/80 rounded-full p-1.5 group-hover:bg-white/90 transition-all duration-300">
-                <img
-                  src="/sounds/picture/logo/logo.png"
-                  alt="Sencha Logo"
-                  className="h-12 w-12 md:h-14 md:w-14 transition-transform duration-300 group-hover:scale-105"
-                />
+    <>
+      <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-gradient-to-r from-emerald-50/90 via-green-50/90 to-teal-100/90 backdrop-blur-md shadow-lg shadow-emerald-200/40' : 'bg-transparent'}`}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20 md:h-24">
+
+            {/* Enhanced Logo Container - Refactored for Header */}
+            <div
+              className="flex-shrink-0 cursor-pointer group flex items-center space-x-3 relative"
+              onClick={() => scrollToSection('home')}
+            >
+              {/* Floating Tea Leaves - Scaled for Header */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Tea Leaf 1 */}
+                <div className="absolute -top-6 -left-4 w-4 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transform rotate-12 opacity-60 group-hover:opacity-80 transition-all duration-500 group-hover:translate-y-1 group-hover:rotate-45">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-300 to-emerald-400 rounded-full transform scale-75 opacity-80"></div>
+                  <div className="absolute top-1/2 left-1/2 w-px h-1.5 bg-emerald-600 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+
+                {/* Tea Leaf 2 */}
+                <div className="absolute -top-3 right-1 w-3 h-1.5 bg-gradient-to-r from-teal-400 to-green-500 rounded-full transform -rotate-45 opacity-50 group-hover:opacity-70 transition-all duration-700 group-hover:translate-x-1 group-hover:-rotate-12">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-300 to-green-400 rounded-full transform scale-75 opacity-80"></div>
+                  <div className="absolute top-1/2 left-1/2 w-px h-1 bg-teal-600 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+
+                {/* Tea Leaf 3 */}
+                <div className="absolute bottom-1 -left-5 w-3 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transform rotate-75 opacity-40 group-hover:opacity-60 transition-all duration-600 group-hover:-translate-y-1 group-hover:rotate-90">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-300 to-teal-400 rounded-full transform scale-75 opacity-80"></div>
+                  <div className="absolute top-1/2 left-1/2 w-px h-1 bg-emerald-600 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+
+                {/* Tea Leaf 4 */}
+                <div className="absolute -bottom-4 right-6 w-4 h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transform -rotate-30 opacity-45 group-hover:opacity-65 transition-all duration-800 group-hover:translate-y-1 group-hover:-rotate-60">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-300 to-emerald-400 rounded-full transform scale-75 opacity-80"></div>
+                  <div className="absolute top-1/2 left-1/2 w-px h-1.5 bg-green-600 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+
+                {/* Tea Leaf 5 */}
+                <div className="absolute top-6 left-8 w-3 h-1.5 bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full transform rotate-105 opacity-35 group-hover:opacity-55 transition-all duration-900 group-hover:translate-x-1 group-hover:rotate-135">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-300 to-emerald-400 rounded-full transform scale-75 opacity-80"></div>
+                  <div className="absolute top-1/2 left-1/2 w-px h-1 bg-teal-600 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+              </div>
+
+              <div className="relative">
+                {/* Enhanced Glow effect - Scaled for Header */}
+                <span className="absolute -inset-1 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition-all duration-300 group-hover:duration-200 animate-pulse"></span>
+
+                {/* Secondary glow for depth */}
+                <span className="absolute -inset-0.5 bg-gradient-to-r from-emerald-300 via-green-300 to-teal-300 rounded-xl blur-md opacity-15 group-hover:opacity-30 transition-all duration-300"></span>
+
+                {/* Logo with curved edges and enhanced styling */}
+                <div className="relative bg-gradient-to-br from-white/85 via-white/80 to-white/75 rounded-2xl p-1.5 group-hover:bg-gradient-to-br group-hover:from-white/90 group-hover:via-white/85 group-hover:to-white/80 transition-all duration-300 shadow-xl group-hover:shadow-emerald-500/20 border border-white/30">
+                  {/* Inner curved container */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-0.5 group-hover:from-emerald-100 group-hover:to-teal-100 transition-all duration-300">
+                    <img
+                      src="/sounds/picture/logo/logo.png"
+                      alt="Sencha Logo"
+                      className="h-12 w-12 md:h-14 md:w-14 transition-transform duration-300 group-hover:scale-105 rounded-lg object-cover"
+                      style={{
+                        filter: 'drop-shadow(0 2px 4px rgba(16, 185, 129, 0.15)) brightness(1.05) contrast(1.1)',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Floating particles around logo - Scaled for Header */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-emerald-400 rounded-full opacity-60 animate-ping"></div>
+                  <div className="absolute bottom-1 left-1 w-0.5 h-0.5 bg-teal-400 rounded-full opacity-40 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                  <div className="absolute top-2 left-0.5 w-px h-px bg-green-400 rounded-full opacity-70 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                </div>
+              </div>
+
+              {/* Enhanced Text with improved effects */}
+              <span className="relative text-lg md:text-xl font-bold tracking-wider font-serif italic select-none">
+                {/* Animated gradient text background - lighter */}
+                <span className="absolute inset-0 animate-gradient-x bg-gradient-to-r from-green-200 via-emerald-200 to-teal-200 bg-[length:200%_200%] bg-clip-text text-transparent filter drop-shadow-[0_0_6px_rgba(110,231,183,0.25)] pointer-events-none">
+                  SENCHA
+                </span>
+                {/* Main text with lighter color */}
+                <span className="text-emerald-400 group-hover:text-emerald-500 transition-colors duration-300 relative drop-shadow-[0_1px_2px_rgba(110,231,183,0.12)] group-hover:drop-shadow-[0_2px_4px_rgba(110,231,183,0.18)]">
+                  SENCHA
+                </span>
+                {/* Subtle underline effect - lighter */}
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-200/70 to-transparent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-full"></span>
+              </span>
+
+              {/* Steam effect - Scaled for Header */}
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-50 transition-opacity duration-500">
+                <div className="relative">
+                  <div className="w-0.5 h-4 bg-gradient-to-t from-transparent via-white/20 to-transparent rounded-full animate-pulse transform rotate-3"></div>
+                  <div className="absolute -left-0.5 w-0.5 h-3 bg-gradient-to-t from-transparent via-white/15 to-transparent rounded-full animate-pulse transform -rotate-2" style={{ animationDelay: '0.3s' }}></div>
+                  <div className="absolute left-0.5 w-0.5 h-3.5 bg-gradient-to-t from-transparent via-white/18 to-transparent rounded-full animate-pulse transform rotate-1" style={{ animationDelay: '0.6s' }}></div>
+                </div>
               </div>
             </div>
-            <span className="relative text-lg md:text-xl font-bold tracking-wider font-serif italic">
-              <span className="absolute inset-0 bg-gradient-to-r from-green-300 to-emerald-400 bg-clip-text text-transparent filter drop-shadow-[0_0_8px_rgba(110,231,183,0.6)]">
-                SENCHA
-              </span>
-              <span className="text-white/90 hover:text-white transition-colors duration-300">
-                SENCHA
-              </span>
-            </span>
-          </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-6 lg:space-x-10">
-            {[
-              { name: 'HOME', id: 'home' },
-              { name: 'ABOUT', id: 'about' },
-              { name: 'PRODUCTS', id: 'products' },
-              { name: 'SERVICES', id: 'services' },
-              { name: 'CONTACT', id: 'contact' }
-            ].map((item) => (
-              <button
-                key={item.name}
-                onClick={() => scrollToSection(item.id)}
-                className="relative text-white hover:text-blue-400 transition-colors duration-200 font-medium text-sm md:text-base tracking-wider group"
-              >
-                {item.name}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:text-blue-400 transition-colors duration-200"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-lg shadow-lg rounded-b-xl mx-2 overflow-hidden">
-            <div className="px-4 py-2 space-y-1">
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-6 lg:space-x-10">
               {[
-                { name: 'HOME', id: 'home', icon: '🏠' },
-                { name: 'ABOUT', id: 'about', icon: 'ℹ️' },
-                { name: 'PRODUCTS', id: 'products', icon: '🍵' },
-                { name: 'SERVICES', id: 'services', icon: '✨' },
-                { name: 'CONTACT', id: 'contact', icon: '✉️' }
+                { name: 'HOME', id: 'home' },
+                { name: 'ABOUT', id: 'about' },
+                { name: 'PRODUCTS', id: 'products' },
+                { name: 'SERVICES', id: 'services' },
+                { name: 'CONTACT', id: 'contact' }
               ].map((item) => (
                 <button
                   key={item.name}
-                  onClick={() => scrollToSection(item.id)}
-                  className="group flex items-center w-full px-4 py-3 text-gray-800 hover:text-emerald-600 hover:bg-emerald-50/80 rounded-lg transition-all duration-200 ease-out font-medium text-base"
+                  onClick={() => handleNavigation(item.id)}
+                  className={`relative transition-colors duration-200 font-semibold text-sm md:text-base tracking-wider group px-2 py-1 ${
+                    isScrolled 
+                      ? 'text-emerald-800 hover:text-emerald-600' 
+                      : 'text-emerald-200 hover:text-emerald-100'
+                  }`}
+                  tabIndex={0}
                 >
-                  <span className="mr-3 text-lg opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform">
-                    {item.icon}
-                  </span>
-                  <span className="relative">
-                    {item.name}
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-400 transition-all duration-300 group-hover:w-full"></span>
-                  </span>
+                  <span className="relative z-10">{item.name}</span>
+                  <span className={`absolute left-0 bottom-0 w-0 h-0.5 rounded-full transition-all duration-300 group-hover:w-full group-focus:w-full ${
+                    isScrolled
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600'
+                      : 'bg-gradient-to-r from-emerald-300 via-teal-300 to-green-300'
+                  }`}></span>
                 </button>
               ))}
-            </div>
-            <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
-              <p className="text-xs text-gray-500 text-center">Sencha - Pure Japanese Matcha</p>
+            </nav>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-emerald-800 hover:text-emerald-600 transition-colors duration-200"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    </header>
+
+          {/* Mobile Navigation */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden bg-white/95 backdrop-blur-lg shadow-lg rounded-b-xl mx-2 overflow-hidden">
+              <div className="px-4 py-2 space-y-1">
+                {[
+                  { name: 'HOME', id: 'home', icon: '🏠' },
+                  { name: 'ABOUT', id: 'about', icon: 'ℹ️' },
+                  { name: 'PRODUCTS', id: 'products', icon: '🍵' },
+                  { name: 'SERVICES', id: 'services', icon: '✨' },
+                  { name: 'CONTACT', id: 'contact', icon: '✉️' }
+                ].map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => handleNavigation(item.id)}
+                    className="group flex items-center w-full px-4 py-3 text-gray-800 hover:text-emerald-600 hover:bg-emerald-50/80 rounded-lg transition-all duration-200 ease-out font-medium text-base"
+                  >
+                    <span className="mr-3 text-lg opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform">
+                      {item.icon}
+                    </span>
+                    <span className="relative">
+                      {item.name}
+                      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-400 transition-all duration-300 group-hover:w-full"></span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+                <p className="text-xs text-gray-500 text-center">Sencha - Pure Japanese Matcha</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Custom CSS for gradient animation */}
+      <style>{`
+        @keyframes gradient-x {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        .animate-gradient-x {
+          animation: gradient-x 3s ease infinite;
+        }
+      `}</style>
+    </>
   );
 };
 
