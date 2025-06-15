@@ -28,8 +28,11 @@ import {
 import { Product, ProductVariant } from '../../types/product-type';
 import { FEATURED_PRODUCTS } from '../../constants';
 import ProductInfoPanel from './ProductInfoPanel';
+import { useParams } from 'react-router-dom';
 
 const ProductDetailPage: React.FC = () => {
+  // Get the optional `id` route param as a string
+  const { id } = useParams<{ id?: string }>();
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -43,10 +46,11 @@ const ProductDetailPage: React.FC = () => {
   const [showInfoPanel, setShowInfoPanel] = useState<boolean>(false);
 
   // Get product data from constants
-  const productData = FEATURED_PRODUCTS.products[0];
-  
+  // Convert the (possibly undefined) route param to a number so it can be used as an array index
+  const productData = FEATURED_PRODUCTS.products[Number(id || 0)];
+
   // Helper function to safely access product data
-  const getProductData = () => ({
+  const getProductData = (): Product => ({
     ...productData,
     price: productData.variants?.[0]?.price || 0,
     caffeineLevel: (productData.caffeineLevel as 'None' | 'Low' | 'Medium' | 'High' | undefined) || 'Medium',
@@ -83,7 +87,7 @@ const ProductDetailPage: React.FC = () => {
   });
 
   // Helper function to safely access array properties
-  const safeArray = function<T>(arr: T[] | undefined): T[] {
+  const safeArray = function <T>(arr: T[] | undefined): T[] {
     return arr || [];
   };
 
@@ -91,21 +95,21 @@ const ProductDetailPage: React.FC = () => {
   const productImages: string[] = getProductData().gallery || [getProductData().image];
 
   // Use safeArray for array operations
-  const flavorNotes = getProductData().flavorNotes;
-  const certifications = getProductData().certifications;
-  const features = getProductData().features;
-  const healthBenefits = getProductData().healthBenefits;
-  const awards = getProductData().awards;
-  const faq = getProductData().faq;
-  const brewingInstructions = getProductData().brewingInstructions;
-  const sustainability = getProductData().sustainability;
+  const flavorNotes: string[] = safeArray(getProductData().flavorNotes);
+  const certifications: string[] = safeArray(getProductData().certifications);
+  const features = safeArray(getProductData().features);
+  const healthBenefits: string[] = safeArray(getProductData().healthBenefits);
+  const awards = safeArray(getProductData().awards);
+  const faq = safeArray(getProductData().faq);
+  const brewingInstructions = getProductData().brewingInstructions ?? {};
+  const sustainability = getProductData().sustainability ?? {};
 
   const relatedProducts = FEATURED_PRODUCTS.products.slice(1, 5).map(({ id, name, image, variants }: { id: number; name: string; image: string; variants: ProductVariant[] }) => ({
     id,
     name,
     image,
     price: variants?.[0]?.price || 0
-  })); 
+  }));
 
   useEffect(() => {
     // Simulating GSAP animations with CSS transitions and transforms
@@ -443,7 +447,7 @@ const ProductDetailPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {getProductData().variants && getProductData().variants.length > 0 && (
                     <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mt-10 mb-8">
                       <h3 className="text-lg font-semibold text-gray-800 mb-6">Available Variants</h3>
@@ -478,8 +482,8 @@ const ProductDetailPage: React.FC = () => {
                   )}
 
                   {/* Price and Quantity */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-center">
+                  <div className="flex items-left justify-between">
+                    <div className="text-left">
                       <p className="text-sm text-gray-600 mb-1">Premium Quality</p>
                       <span className="text-3xl font-bold text-emerald-600">
                         Contact Us
@@ -509,10 +513,11 @@ const ProductDetailPage: React.FC = () => {
                       <ShoppingCart size={22} />
                       Thêm vào giỏ hàng
                     </button>
-                    <button className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group">
-                      <Heart size={22} className="text-emerald-600 group-hover:fill-current" />
+                    <button className="p-4 border-2 border-pink-200 rounded-2xl hover:border-pink-400 hover:bg-pink-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2">
+                      <Heart size={22} className="text-pink-600 group-hover:fill-current" />
+                      <span className="font-semibold text-pink-700 group-hover:text-pink-900 transition-colors">Love</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowInfoPanel(true)}
                       className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2"
                     >
@@ -524,7 +529,7 @@ const ProductDetailPage: React.FC = () => {
               </div>
             </div>
 
-            
+
             {/* Product Details Tabs */}
             <div className="mt-12" ref={detailsRef}>
               <div className="border-b border-gray-200">
@@ -570,12 +575,12 @@ const ProductDetailPage: React.FC = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                   {/* Flavor Profile */}
-                  {flavorNotes.length > 0 && renderDetailSection(
+                  {flavorNotes && flavorNotes.length > 0 && renderDetailSection(
                     'Flavor Profile',
                     <Coffee className="h-5 w-5" />,
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        {flavorNotes.map((note, index) => (
+                        {flavorNotes?.map((note, index) => (
                           <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
                             {note}
                           </span>
@@ -602,11 +607,11 @@ const ProductDetailPage: React.FC = () => {
                 {/* Right Column */}
                 <div className="space-y-6">
                   {/* Brewing Instructions */}
-                  {((brewingInstructions.traditional || brewingInstructions.modern || brewingInstructions.iced) && renderDetailSection(
+                  {((brewingInstructions?.traditional || brewingInstructions?.modern || brewingInstructions?.iced) && renderDetailSection(
                     'Brewing Instructions',
                     <TeaLeaf className="h-5 w-5" />,
                     <div className="space-y-4">
-                      {brewingInstructions.traditional && (
+                      {brewingInstructions?.traditional && (
                         <div className="flex items-center">
                           <p className="text-gray-700">Traditional Method</p>
                           <p className="text-gray-600">{brewingInstructions.traditional}</p>
@@ -654,11 +659,11 @@ const ProductDetailPage: React.FC = () => {
                   ))}
 
                   {/* Certifications */}
-                  {certifications.length > 0 && renderDetailSection(
+                  {certifications?.length && renderDetailSection(
                     'Certifications',
                     <Award className="h-5 w-5" />,
                     <div className="flex flex-wrap gap-2">
-                      {certifications.map((cert, index) => (
+                      {certifications?.map((cert, index) => (
                         <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                           {cert}
                         </span>
@@ -674,11 +679,11 @@ const ProductDetailPage: React.FC = () => {
 
 
                 {/* Product Features */}
-                {features.length > 0 && (
+                {features?.length > 0 && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Featured Collections</h3>
                     <div className="space-y-4">
-                      {features.map((feature, index) => {
+                      {features?.map((feature, index) => {
                         const { title, description } = getFeatureProps(feature);
                         return (
                           <div key={index} className="border-l-4 border-emerald-500 pl-4 py-1">
@@ -762,11 +767,11 @@ const ProductDetailPage: React.FC = () => {
         onClose={() => setShowInfoPanel(false)}
         getProductData={getProductData}
         flavorNotes={flavorNotes}
-        brewingInstructions={brewingInstructions}
+        brewingInstructions={brewingInstructions ?? {}}
         healthBenefits={healthBenefits}
         certifications={certifications}
         awards={awards}
-        sustainability={sustainability}
+        sustainability={sustainability ?? {}}
         faq={faq}
       />
     </>

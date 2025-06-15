@@ -64,7 +64,7 @@ const FeaturedProducts = () => {
                       .slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide)
                       .map((product, index) => (
                         <Link 
-                          to={`/product/${product.id}`}
+                          to={`/products/${product.id}`}
                           key={product.id}
                           className={`group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full ${
                             index === 1 ? 'scale-105 z-10' : ''

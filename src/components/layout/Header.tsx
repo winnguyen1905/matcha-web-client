@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { gsap } from 'gsap';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
@@ -16,7 +17,206 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNavigation = (id: string) => {
+  // Enhanced GSAP hover animations for desktop nav items
+  useLayoutEffect(() => {
+    const items = document.querySelectorAll<HTMLElement>('.nav-item');
+
+    const enter = (el: HTMLElement): void => {
+      // Enhanced hover effect with multiple animations
+      const tl = gsap.timeline();
+      tl.to(el, { 
+        y: -4, 
+        scale: 1.08, 
+        duration: 0.3, 
+        ease: 'power3.out' 
+      })
+      .to(el.querySelector('.nav-glow'), {
+        opacity: 0.6,
+        scale: 1.2,
+        duration: 0.3,
+        ease: 'power2.out'
+      }, 0)
+      .to(el.querySelector('.nav-text'), {
+        textShadow: '0 0 8px rgba(16, 185, 129, 0.4)',
+        color: '#065F46',
+        duration: 0.3,
+        ease: 'power2.out'
+      }, 0);
+
+      // Tea leaf drop effect
+      if (getComputedStyle(el).position === 'static') {
+        (el as HTMLElement).style.position = 'relative';
+      }
+      const leaf = document.createElement('span');
+      leaf.className = 'leaf-drop';
+      el.appendChild(leaf);
+      gsap.set(leaf, { position: 'absolute', top: '-8px', left: '50%', xPercent: -50, width: 6, height: 3, borderRadius: '9999px', background: 'linear-gradient(to right, #059669, #065f46)', rotate: -30, opacity: 1 });
+      gsap.to(leaf, { y: 20, rotation: 30, opacity: 0, duration: 0.9, ease: 'power1.in', onComplete: () => leaf.remove() });
+    };
+
+    const leave = (el: HTMLElement): void => {
+      const tl = gsap.timeline();
+      tl.to(el, { 
+        y: 0, 
+        scale: 1, 
+        duration: 0.4, 
+        ease: 'power3.inOut' 
+      })
+      .to(el.querySelector('.nav-glow'), {
+        opacity: 0,
+        scale: 1,
+        duration: 0.4,
+        ease: 'power2.inOut'
+      }, 0)
+      .to(el.querySelector('.nav-text'), {
+        textShadow: '0 0 0px rgba(16, 185, 129, 0)',
+        color: '#059669',
+        duration: 0.4,
+        ease: 'power2.inOut'
+      }, 0);
+
+      // Tea leaf drop effect
+      if (getComputedStyle(el).position === 'static') {
+        (el as HTMLElement).style.position = 'relative';
+      }
+      const leaf = document.createElement('span');
+      leaf.className = 'leaf-drop';
+      el.appendChild(leaf);
+      gsap.set(leaf, { position: 'absolute', top: '-8px', left: '50%', xPercent: -50, width: 6, height: 3, borderRadius: '9999px', background: 'linear-gradient(to right, #059669, #065f46)', rotate: -30, opacity: 1 });
+      gsap.to(leaf, { y: 20, rotation: 30, opacity: 0, duration: 0.9, ease: 'power1.in', onComplete: () => leaf.remove() });
+    };
+
+    items.forEach((el: HTMLElement) => {
+      const onEnter = () => enter(el);
+      const onLeave = () => leave(el);
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+      const onClick = () => enter(el);
+      el.addEventListener('click', onClick);
+
+      // Store cleanup on element for later removal
+      (el as any)._enter = onEnter;
+      (el as any)._leave = onLeave;
+      (el as any)._click = onClick;
+    });
+
+    return () => {
+      items.forEach((el: HTMLElement) => {
+        if ((el as any)._enter) el.removeEventListener('mouseenter', (el as any)._enter);
+        if ((el as any)._leave) el.removeEventListener('mouseleave', (el as any)._leave);
+        if ((el as any)._click) el.removeEventListener('click', (el as any)._click);
+      });
+    };
+  }, []);
+
+  // GSAP animations for mobile menu items
+  useLayoutEffect(() => {
+    if (isMobileMenuOpen) {
+      const mobileItems = document.querySelectorAll<HTMLElement>('.mobile-nav-item');
+      
+      // Animate mobile menu items in
+      gsap.fromTo(mobileItems, 
+        {
+          x: -50,
+          opacity: 0,
+          rotationY: -15
+        },
+        {
+          x: 0,
+          opacity: 1,
+          rotationY: 0,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: 'power3.out'
+        }
+      );
+
+      // Setup hover animations for mobile items
+      mobileItems.forEach((el: HTMLElement) => {
+        const enterMobile = () => {
+          const tl = gsap.timeline();
+          tl.to(el, {
+            x: 8,
+            scale: 1.02,
+            duration: 0.3,
+            ease: 'power2.out'
+          })
+          .to(el.querySelector('.mobile-icon'), {
+            scale: 1.2,
+            rotation: 5,
+            duration: 0.3,
+            ease: 'back.out(1.2)'
+          }, 0)
+          .to(el.querySelector('.mobile-text'), {
+            x: 4,
+             color: '#065F46',
+            duration: 0.3,
+            ease: 'power2.out'
+          }, 0);
+
+      // Tea leaf drop effect
+      if (getComputedStyle(el).position === 'static') {
+        (el as HTMLElement).style.position = 'relative';
+      }
+      const leaf = document.createElement('span');
+      leaf.className = 'leaf-drop';
+      el.appendChild(leaf);
+      gsap.set(leaf, { position: 'absolute', top: '-8px', left: '50%', xPercent: -50, width: 6, height: 3, borderRadius: '9999px', background: 'linear-gradient(to right, #059669, #065f46)', rotate: -30, opacity: 1 });
+      gsap.to(leaf, { y: 20, rotation: 30, opacity: 0, duration: 0.9, ease: 'power1.in', onComplete: () => leaf.remove() });
+        };
+
+        const leaveMobile = () => {
+          const tl = gsap.timeline();
+          tl.to(el, {
+            x: 0,
+            scale: 1,
+            duration: 0.4,
+            ease: 'power2.inOut'
+          })
+          .to(el.querySelector('.mobile-icon'), {
+            scale: 1,
+            rotation: 0,
+            duration: 0.4,
+            ease: 'power2.inOut'
+          }, 0)
+          .to(el.querySelector('.mobile-text'), {
+            x: 0,
+            duration: 0.4,
+            ease: 'power2.inOut'
+          }, 0);
+
+      // Tea leaf drop effect
+      if (getComputedStyle(el).position === 'static') {
+        (el as HTMLElement).style.position = 'relative';
+      }
+      const leaf = document.createElement('span');
+      leaf.className = 'leaf-drop';
+      el.appendChild(leaf);
+      gsap.set(leaf, { position: 'absolute', top: '-8px', left: '50%', xPercent: -50, width: 6, height: 3, borderRadius: '9999px', background: 'linear-gradient(to right, #059669, #065f46)', rotate: -30, opacity: 1 });
+      gsap.to(leaf, { y: 20, rotation: 30, opacity: 0, duration: 0.9, ease: 'power1.in', onComplete: () => leaf.remove() });
+        };
+
+        el.addEventListener('mouseenter', enterMobile);
+        el.addEventListener('mouseleave', leaveMobile);
+        
+        // Store for cleanup
+        (el as any)._enterMobile = enterMobile;
+        (el as any)._leaveMobile = leaveMobile;
+      });
+    }
+
+    return () => {
+      const mobileItems = document.querySelectorAll<HTMLElement>('.mobile-nav-item');
+      mobileItems.forEach((el: HTMLElement) => {
+        if ((el as any)._enterMobile && (el as any)._leaveMobile) {
+          el.removeEventListener('mouseenter', (el as any)._enterMobile);
+          el.removeEventListener('mouseleave', (el as any)._leaveMobile);
+        }
+      });
+    };
+  }, [isMobileMenuOpen]);
+
+  const handleNavigation = (id: string): void => {
     setIsMobileMenuOpen(false);
     switch (id) {
       case 'home':
@@ -39,7 +239,7 @@ const Header = () => {
     }
   };
 
-  const scrollToSection = (sectionId: string) => {
+  const scrollToSection = (sectionId: string): void => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -56,7 +256,7 @@ const Header = () => {
             {/* Enhanced Logo Container - Refactored for Header */}
             <div
               className="flex-shrink-0 cursor-pointer group flex items-center space-x-3 relative"
-              onClick={() => scrollToSection('home')}
+              onClick={() => navigate('/')}
             >
               {/* Floating Tea Leaves - Scaled for Header */}
               <div className="absolute inset-0 pointer-events-none">
@@ -157,14 +357,22 @@ const Header = () => {
                 <button
                   key={item.name}
                   onClick={() => handleNavigation(item.id)}
-                  className={`relative transition-colors duration-200 font-semibold text-sm md:text-base tracking-wider group px-2 py-1 ${
+                  className={`relative nav-item transition-colors duration-200 font-semibold text-sm md:text-base tracking-wider group px-3 py-2 rounded-lg overflow-hidden ${
                     isScrolled 
                       ? 'text-emerald-800 hover:text-emerald-600' 
                       : 'text-emerald-200 hover:text-emerald-100'
                   }`}
                   tabIndex={0}
                 >
-                  <span className="relative z-10">{item.name}</span>
+                  {/* Glow effect for GSAP animation */}
+                  <span className={`nav-glow absolute inset-0 rounded-lg opacity-0 ${
+                    isScrolled
+                      ? 'bg-gradient-to-r from-emerald-100/40 via-teal-100/40 to-green-100/40'
+                      : 'bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-green-400/20'
+                  }`}></span>
+                  
+                  <span className="nav-text relative z-10">{item.name}</span>
+                  
                   <span className={`absolute left-0 bottom-0 w-0 h-0.5 rounded-full transition-all duration-300 group-hover:w-full group-focus:w-full ${
                     isScrolled
                       ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600'
@@ -199,12 +407,12 @@ const Header = () => {
                   <button
                     key={item.name}
                     onClick={() => handleNavigation(item.id)}
-                    className="group flex items-center w-full px-4 py-3 text-gray-800 hover:text-emerald-600 hover:bg-emerald-50/80 rounded-lg transition-all duration-200 ease-out font-medium text-base"
+                    className="mobile-nav-item group flex items-center w-full px-4 py-3 text-gray-800 hover:text-emerald-600 hover:bg-emerald-50/80 rounded-lg transition-all duration-200 ease-out font-medium text-base overflow-hidden relative"
                   >
-                    <span className="mr-3 text-lg opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-transform">
+                    <span className="mobile-icon mr-3 text-lg opacity-70 group-hover:opacity-100 transition-opacity relative z-10">
                       {item.icon}
                     </span>
-                    <span className="relative">
+                    <span className="mobile-text relative z-10">
                       {item.name}
                       <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-400 transition-all duration-300 group-hover:w-full"></span>
                     </span>

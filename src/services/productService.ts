@@ -1,4 +1,4 @@
-import { Product, ProductVariant, FeaturedProducts } from '../types/product-type';
+import { Product, ProductVariant, FeaturedProducts, ProductReview } from '../types/product-type';
 import { FEATURED_PRODUCTS } from '../constants';
 
 /**
@@ -153,4 +153,133 @@ export const getSortedProducts = (sortBy: 'price' | 'rating' | 'newest' | 'popul
     default:
       return products;
   }
+};
+
+/**
+ * Transforms raw review data into ProductReview type
+ * @param rawReview - Raw review data from API
+ * @returns Transformed ProductReview object
+ */
+export const transformProductReview = (rawReview: any): ProductReview => {
+  return {
+    id: rawReview.id,
+    productId: rawReview.productId,
+    image: rawReview.image,
+    rating: rawReview.rating,
+    comment: rawReview.comment,
+    createdAt: rawReview.createdAt,
+    stock: rawReview.stock,
+    price: rawReview.price,
+    sold: rawReview.sold,
+    isAvailable: rawReview.isAvailable,
+    badge: rawReview.badge,
+    origin: rawReview.origin,
+    brand: rawReview.brand,
+    category: rawReview.category,
+    type: rawReview.type
+  };
+};
+
+/**
+ * Gets reviews for a specific product
+ * @param productId - ID of the product to get reviews for
+ * @returns Array of ProductReview objects
+ */
+export const getProductReviews = (productId: number): ProductReview[] => {
+  // This is a mock implementation since we don't have actual review data in constants
+  // In a real application, this would fetch from an API
+  const product = FEATURED_PRODUCTS.products.find(p => p.id === productId);
+  
+  if (!product) return [];
+
+  // Create mock reviews based on product data
+  return [
+    {
+      id: 1,
+      productId: product.id,
+      image: product.image,
+      rating: product.rating,
+      comment: `Great ${product.name}! The quality is exceptional.`,
+      createdAt: new Date().toISOString(),
+      stock: product.stock,
+      price: product.price,
+      sold: Math.floor(Math.random() * 100),
+      isAvailable: product.stock > 0,
+      badge: product.badge,
+      origin: product.origin,
+      brand: product.brand,
+      category: product.category,
+      type: product.type
+    },
+    {
+      id: 2,
+      productId: product.id,
+      image: product.image,
+      rating: product.rating - 0.5,
+      comment: `Good ${product.name}, but could be better.`,
+      createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      stock: product.stock,
+      price: product.price,
+      sold: Math.floor(Math.random() * 100),
+      isAvailable: product.stock > 0,
+      badge: product.badge,
+      origin: product.origin,
+      brand: product.brand,
+      category: product.category,
+      type: product.type
+    }
+  ];
+};
+
+/**
+ * Gets average rating for a product
+ * @param productId - ID of the product to get average rating for
+ * @returns Average rating or null if no reviews
+ */
+export const getProductAverageRating = (productId: number): number | null => {
+  const reviews = getProductReviews(productId);
+  if (reviews.length === 0) return null;
+  
+  const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+  return sum / reviews.length;
+};
+
+/**
+ * Gets reviews sorted by different criteria
+ * @param productId - ID of the product to get reviews for
+ * @param sortBy - Sorting criteria ('newest' | 'rating' | 'helpful')
+ * @returns Sorted array of ProductReview objects
+ */
+export const getSortedProductReviews = (
+  productId: number,
+  sortBy: 'newest' | 'rating' | 'helpful' = 'newest'
+): ProductReview[] => {
+  const reviews = getProductReviews(productId);
+  
+  switch (sortBy) {
+    case 'newest':
+      return reviews.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    case 'rating':
+      return reviews.sort((a, b) => b.rating - a.rating);
+    case 'helpful':
+      // Mock implementation - in real app would use actual helpful votes
+      return reviews.sort((a, b) => b.sold - a.sold);
+    default:
+      return reviews;
+  }
+};
+
+/**
+ * Gets reviews filtered by rating
+ * @param productId - ID of the product to get reviews for
+ * @param minRating - Minimum rating to include
+ * @returns Filtered array of ProductReview objects
+ */
+export const getProductReviewsByRating = (
+  productId: number,
+  minRating: number
+): ProductReview[] => {
+  return getProductReviews(productId).filter(review => review.rating >= minRating);
 }; 

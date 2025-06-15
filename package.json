@@ -12,13 +12,14 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
+    "@date-io/date-fns": "^3.2.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^5.17.1",
-    "@mui/material": "^5.15.7",
+    "@mui/material": "^5.17.1",
     "@mui/x-charts": "^6.19.2",
     "@mui/x-data-grid": "^6.19.2",
-    "@mui/x-date-pickers": "^6.18.7",
+    "@mui/x-date-pickers": "^6.20.2",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",

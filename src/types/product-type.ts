@@ -1,3 +1,12 @@
+export interface TeaLeaf {
+  element: HTMLDivElement;
+  x: number;
+  y: number;
+  rotation: number;
+  scale: number;
+  opacity: number;
+}
+
 export interface Product {
     id: number;
     name: string;
