@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Pause, Play } from 'lucide-react';
 
 const BackgroundMusic = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true); // Start with true for autoplay
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hasInteracted = useRef(false);
 
   // Handle play/pause
   const togglePlay = () => {
@@ -21,13 +22,39 @@ const BackgroundMusic = () => {
 
   // Set initial volume and handle audio loading
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = 0.5; // Set default volume to 50%
-      console.log('Audio source:', audioRef.current.src);
-      
-      // Don't try to autoplay due to browser restrictions
-      // Audio will start when user first clicks the play button
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleFirstInteraction = () => {
+      if (!hasInteracted.current) {
+        hasInteracted.current = true;
+        audio.volume = 0.5; // Set default volume to 50%
+        audio.loop = true; // Make the audio loop
+        
+        // Try to play audio after user interaction
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log("Autoplay prevented:", error);
+            // Autoplay was prevented, we'll wait for user interaction
+            setIsPlaying(false);
+          });
+        }
+      }
+    };
+
+    // Try to play on first interaction
+    window.addEventListener('click', handleFirstInteraction, { once: true });
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    };
   }, []);
   
   // Add a one-time click handler to the document to enable audio

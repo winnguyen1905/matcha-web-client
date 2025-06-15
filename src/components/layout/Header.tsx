@@ -351,7 +351,7 @@ const Header = () => {
                 { name: 'HOME', id: 'home' },
                 { name: 'ABOUT', id: 'about' },
                 { name: 'PRODUCTS', id: 'products' },
-                { name: 'SERVICES', id: 'services' },
+                // { name: 'SERVICES', id: 'services' },
                 { name: 'CONTACT', id: 'contact' }
               ].map((item) => (
                 <button
@@ -397,24 +397,15 @@ const Header = () => {
           {isMobileMenuOpen && (
             <div className="md:hidden bg-white/95 backdrop-blur-lg shadow-lg rounded-b-xl mx-2 overflow-hidden">
               <div className="px-4 py-2 space-y-1">
-                {[
-                  { name: 'HOME', id: 'home', icon: '🏠' },
-                  { name: 'ABOUT', id: 'about', icon: 'ℹ️' },
-                  { name: 'PRODUCTS', id: 'products', icon: '🍵' },
-                  { name: 'SERVICES', id: 'services', icon: '✨' },
-                  { name: 'CONTACT', id: 'contact', icon: '✉️' }
-                ].map((item) => (
+                {['home', 'about', 'products', 'contact'].map((item) => (
                   <button
-                    key={item.name}
-                    onClick={() => handleNavigation(item.id)}
-                    className="mobile-nav-item group flex items-center w-full px-4 py-3 text-gray-800 hover:text-emerald-600 hover:bg-emerald-50/80 rounded-lg transition-all duration-200 ease-out font-medium text-base overflow-hidden relative"
+                    key={item}
+                    onClick={() => handleNavigation(item)}
+                    className="w-full px-4 py-3 text-left text-emerald-700 hover:text-white hover:bg-emerald-600/10 rounded-lg transition-all duration-300 font-medium text-base group"
                   >
-                    <span className="mobile-icon mr-3 text-lg opacity-70 group-hover:opacity-100 transition-opacity relative z-10">
-                      {item.icon}
-                    </span>
-                    <span className="mobile-text relative z-10">
-                      {item.name}
-                      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-400 transition-all duration-300 group-hover:w-full"></span>
+                    <span className="relative">
+                      <span className="absolute inset-0 bg-emerald-100/30 rounded-lg scale-95 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300"></span>
+                      <span className="relative z-10">{item.toUpperCase()}</span>
                     </span>
                   </button>
                 ))}
