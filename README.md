@@ -1,6 +1,7 @@
 # Sencha
 
-![Sencha App Screenshot](https://via.placeholder.com/800x450?text=Your+App+Screenshot+Here)
+![image](https://github.com/user-attachments/assets/8722024c-1666-4002-bc30-19304e134fee)
+
 
 ---
 
