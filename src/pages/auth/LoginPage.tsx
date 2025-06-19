@@ -1,63 +1,93 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/AuthContext';
+import AlertModal from '../../components/ui/AlertModal';
+import { Box, Button, TextField, Typography, Container, Paper, Grid, Link as MuiLink } from '@mui/material';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { login, alert, closeAlert, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement login logic
-    console.log('Login attempt:', { email, password });
+    try {
+      await login(email, password);
+      navigate('/'); // Redirect to home after successful login
+    } catch (error) {
+      // Error is already handled in the AuthContext
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
+          <Typography component="h1" variant="h5" align="center" gutterBottom>
+            Sign in
+          </Typography>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
               id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
             />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
               type="password"
               id="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
             />
-          </div>
-          <button
-            type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Sign in
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/auth/register" className="font-medium text-blue-600 hover:text-blue-500">
-            Register here
-          </Link>
-        </p>
-      </div>
-    </div>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={isLoading}
+              sx={{ mt: 3, mb: 2 }}
+            >
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <Grid container justifyContent="flex-end">
+              <Grid item>
+                <MuiLink component={Link} to="/auth/register" variant="body2">
+                  Don't have an account? Sign Up
+                </MuiLink>
+              </Grid>
+            </Grid>
+          </Box>
+        </Paper>
+      </Box>
+
+      <AlertModal
+        open={alert.open}
+        title={alert.severity === 'error' ? 'Error' : 'Success'}
+        message={alert.message}
+        severity={alert.severity || 'info'}
+        onClose={closeAlert}
+      />
+    </Container>
   );
 };
 
-export default LoginPage; 
+export default LoginPage;
