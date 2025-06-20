@@ -1,24 +1,25 @@
 import { Container, Box, styled } from '@mui/material';
 import { Outlet } from 'react-router-dom';
+import { drawerWidth, collapsedWidth } from './AdminSidebar';
 
-const Main = styled('main')(({ theme }) => ({
-  flexGrow: 1,
-  padding: theme.spacing(3),
-  transition: theme.transitions.create('margin', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  marginLeft: 0,
-  [theme.breakpoints.up('sm')]: {
-    marginLeft: '240px',
-  },
-  width: '100%',
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(2),
-  },
-}));
+interface AdminMainContentProps {
+  isCollapsed: boolean;
+}
 
-export const AdminMainContent = () => {
+export const AdminMainContent = ({ isCollapsed }: AdminMainContentProps) => {
+  const Main = styled('main')(({ theme }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    marginTop: '64px', // Height of the AppBar
+    marginLeft: isCollapsed ? `${collapsedWidth}px` : `${drawerWidth}px`,
+    width: isCollapsed ? `calc(100% - ${collapsedWidth}px)` : `calc(100% - ${drawerWidth}px)`,
+    minHeight: 'calc(100vh - 64px)', // Full height minus header
+    [theme.breakpoints.down('sm')]: {
+      marginLeft: 0,
+      width: '100%',
+      padding: theme.spacing(2),
+    },
+  }));
   return (
     <Main>
       <Box component="div" sx={{ height: '64px' }} /> {/* Toolbar spacer */}

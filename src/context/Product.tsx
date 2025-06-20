@@ -31,7 +31,7 @@ interface Product extends Omit<AppwriteDocument, 'features'> {
   description: string;
   price: number;
   category: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   stock: number;
   isFeatured?: boolean;
   features?: ProductFeatures;
@@ -39,6 +39,11 @@ interface Product extends Omit<AppwriteDocument, 'features'> {
 
 // Helper function to parse features from Appwrite response
 const parseProductFromResponse = (response: any): Product => {
+  // Support both imageUrl (legacy) and imageUrls (new)
+  let imageUrls: string[] | undefined = response.imageUrls;
+  if (!imageUrls && response.imageUrl) {
+    imageUrls = [response.imageUrl];
+  }
   return {
     ...response,
     name: response.name || '',
@@ -51,7 +56,8 @@ const parseProductFromResponse = (response: any): Product => {
       ? (typeof response.features === 'string' 
           ? JSON.parse(response.features) 
           : response.features)
-      : undefined
+      : undefined,
+    imageUrls,
   };
 };
 
@@ -59,8 +65,8 @@ interface ProductContextType {
   products: Product[];
   loading: boolean;
   error: string | null;
-  addProduct: (product: Omit<Product, '$id'>, imageFile?: File) => Promise<void>;
-  updateProduct: (id: string, updates: Partial<Product>, imageFile?: File) => Promise<void>;
+  addProduct: (product: Omit<Product, '$id'>, imageFiles?: File[]) => Promise<void>;
+  updateProduct: (id: string, updates: Partial<Product>, imageFiles?: File[]) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   getProductById: (id: string) => Promise<Product | null>;
   getProductsByCategory: (category: string) => Promise<Product[]>;
@@ -82,55 +88,51 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Upload image to storage bucket
-  const uploadImage = async (file: File): Promise<string> => {
+  // Upload images to storage bucket
+  const uploadImages = async (files: File[]): Promise<string[]> => {
     try {
-      const response = await storage.createFile(
-        PRODUCT_IMAGES_BUCKET_ID,
-        ID.unique(),
-        file
-      );
-      
-      // Get the file URL
-      const fileUrl = storage.getFilePreview(
-        PRODUCT_IMAGES_BUCKET_ID,
-        response.$id
-      );
-      
-      return fileUrl.toString();
+      const urls: string[] = [];
+      for (const file of files) {
+        const response = await storage.createFile(
+          PRODUCT_IMAGES_BUCKET_ID,
+          ID.unique(),
+          file
+        );
+        const fileUrl = storage.getFilePreview(
+          PRODUCT_IMAGES_BUCKET_ID,
+          response.$id
+        );
+        urls.push(fileUrl.toString());
+      }
+      return urls;
     } catch (err) {
-      console.error("Error uploading image:", err);
-      throw new Error("Failed to upload image");
+      console.error("Error uploading images:", err);
+      throw new Error("Failed to upload images");
     }
   };
 
   // Add a new product
-  const addProduct = async (product: Omit<Product, '$id'>, imageFile?: File) => {
+  const addProduct = async (product: Omit<Product, '$id'>, imageFiles?: File[]) => {
     try {
       setLoading(true);
       setError(null);
-      
-      let imageUrl = product.imageUrl;
-      
-      // Upload new image if provided
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+      let imageUrls = product.imageUrls || [];
+      // Upload new images if provided
+      if (imageFiles && imageFiles.length > 0) {
+        imageUrls = await uploadImages(imageFiles);
       }
-      
       const newProduct = {
         ...product,
-        imageUrl,
+        imageUrls,
         price: Number(product.price), // Ensure price is a number
         stock: Number(product.stock)  // Ensure stock is a number
       };
-      
       const response = await databases.createDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         ID.unique(),
         newProduct
       );
-      
       const parsedProduct = parseProductFromResponse(response);
       setProducts(prevProducts => [parsedProduct, ...prevProducts]);
     } catch (err) {
@@ -143,37 +145,31 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Update an existing product
-  const updateProduct = async (id: string, updates: Partial<Product>, imageFile?: File) => {
+  const updateProduct = async (id: string, updates: Partial<Product>, imageFiles?: File[]) => {
     try {
       setLoading(true);
       setError(null);
-      
       const currentProduct = products.find(p => p.$id === id);
       if (!currentProduct) {
         throw new Error("Product not found");
       }
-      
-      let imageUrl = updates.imageUrl || currentProduct.imageUrl;
-      
-      // Upload new image if provided
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+      let imageUrls = updates.imageUrls || currentProduct.imageUrls || [];
+      // Upload new images if provided
+      if (imageFiles && imageFiles.length > 0) {
+        imageUrls = await uploadImages(imageFiles);
       }
-      
       const updatedProduct = {
         ...updates,
-        imageUrl,
+        imageUrls,
         price: updates.price ? Number(updates.price) : currentProduct.price,
         stock: updates.stock ? Number(updates.stock) : currentProduct.stock
       };
-      
       const response = await databases.updateDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         id,
         updatedProduct
       );
-      
       const parsedProduct = parseProductFromResponse(response);
       setProducts(prevProducts => 
         prevProducts.map(p => p.$id === id ? parsedProduct : p)

@@ -31,6 +31,7 @@ export const storage = new Storage(client);
 
 // Database and Collection IDs
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
+
 export const COLLECTIONS = {
   IDEAS: 'ideas',
   // Add other collections as needed

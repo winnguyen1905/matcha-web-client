@@ -6,7 +6,7 @@ import { BrowserRouter, Link as RouterLink, useLocation, useNavigate } from 'rea
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { UserProvider, useUser } from './hooks/useUser';
 import AppRoutes from './routes';
-import theme from './theme';
+import { lightTheme } from './theme';
 
 // const Navbar = () => {
 //   const { current: user, logout } = useUser();
@@ -89,7 +89,7 @@ const AppContent = () => {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <AuthProvider>
