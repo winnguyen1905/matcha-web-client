@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-bold mb-4">EMERY'S CORNER</h3>
+            <h3 className="text-2xl font-bold mb-4">Senchaa</h3>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Your trusted neighborhood partner for quality products 
               and exceptional service since 2000.
@@ -57,7 +57,7 @@ const Footer = () => {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2025 Emery's Corner. All rights reserved.
+            © 2025 Senchaa. All rights reserved.
           </p>
         </div>
       </div>

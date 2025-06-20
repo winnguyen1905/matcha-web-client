@@ -1,125 +1,76 @@
 import React from 'react';
-import { Navigate, useRoutes } from 'react-router-dom';
-import { useAuth } from '../hooks/AuthContext';
-import { useUser } from '../hooks/AcccountContext';
+import { Navigate, useRoutes, Outlet } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminLayout from '../components/layout/AdminLayout';
+import CustomerLayout from '../components/layout/CustomerLayout';
+import ErrorPage from '../pages/error/ErrorPage';
+import adminRoutes from './usecases/adminRoutes';
+import customerRoutes from './usecases/customerRoutes';
+import publicRoutes from './usecases/publicRoutes';
 import HomePage from '../pages/home/HomePage';
 import ProductPage from '../pages/product/ProductPage';
 import ProductDetailPage from '../pages/product-detail/ProductDetailPage';
-import ErrorPage from '../pages/error/ErrorPage';
-import LoginPage from '../pages/auth/LoginPage';
-import RegisterPage from '../pages/auth/RegisterPage';
-import ProfilePage from '../pages/profile/ProfilePage';
-import Layout from '../components/layout/Layout';
 
-// A wrapper for protected routes that require authentication
-const ProtectedRoute: React.FC<{ element: React.ReactElement; roles?: string[] }> = ({ 
-  element, 
-  roles = [] 
-}) => {
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { current: user, isLoading: isUserLoading } = useUser();
+// Main routes configuration
+const routes = [
+  // Admin routes with layout
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute element={<AdminLayout />} />
+    ),
+    children: [
+      ...adminRoutes,
+      {
+        path: '*',
+        element: <Navigate to="dashboard" replace />
+      }
+    ]
+  },
 
-  if (isAuthLoading || isUserLoading) {
-    return <div>Loading...</div>; // Or a proper loading component
+  // Public routes
+  ...publicRoutes,
+  // Main layout wrapper for all customer-facing routes
+  {
+    path: '/',
+    element: (
+      <CustomerLayout>
+        <Outlet />
+      </CustomerLayout>
+    ),
+    children: [
+      {
+        index: true,
+        element: <HomePage />
+      },
+      {
+        path: 'products',
+        element: <ProductPage />
+      },
+      {
+        path: 'products/:id',
+        element: <ProductDetailPage />
+      },
+      // Protected routes
+      ...customerRoutes,
+
+      // 404 route - only for / paths
+      {
+        path: '*',
+        element: <ErrorPage />
+      }
+    ]
+  },
+
+  // Catch-all 404 route for non-/ paths
+  {
+    path: '*',
+    element: <ErrorPage />
   }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth/login" state={{ from: window.location.pathname }} replace />;
-  }
-
-  // Check if user has required roles if any are specified
-  if (roles.length > 0 && !roles.some(role => user?.labels?.includes(role))) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return element;
-};
-
-// A wrapper for public-only routes (like login/register)
-const PublicRoute: React.FC<{ element: React.ReactElement }> = ({ element }) => {
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { isLoading: isUserLoading } = useUser();
-
-  if (isAuthLoading || isUserLoading) {
-    return <div>Loading...</div>; // Or a proper loading component
-  }
-
-  return isAuthenticated ? <Navigate to="/" replace /> : element;
-};
+];
 
 const AppRoutes: React.FC = () => {
-  const routes = useRoutes([
-    {
-      path: '/',
-      element: <Layout />,
-      errorElement: <ErrorPage />,
-      children: [
-        {
-          index: true,
-          element: <ProtectedRoute element={<HomePage />} />,
-        },
-        {
-          path: 'products',
-          element: <ProtectedRoute element={<ProductPage />} />,
-        },
-        {
-          path: 'products/:id',
-          element: <ProtectedRoute element={<ProductDetailPage />} />,
-        },
-        // Admin only route example
-        // {
-        //   path: 'admin',
-        //   element: <ProtectedRoute element={<AdminPage />} roles={['admin']} />,
-        // },
-        {
-          path: 'profile',
-          element: <ProtectedRoute element={<ProfilePage />} />,
-        },
-        {
-          path: 'auth',
-          children: [
-            {
-              path: 'login',
-              element: <PublicRoute element={<LoginPage />} />,
-            },
-            {
-              path: 'register',
-              element: <PublicRoute element={<RegisterPage />} />,
-            },
-          ],
-        },
-        {
-          path: 'products',
-          children: [
-            {
-              index: true,
-              element: <ProtectedRoute element={<ProductPage />} />,
-            },
-            {
-              path: ':id',
-              element: <ProtectedRoute element={<ProductDetailPage />} />,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      path: '/auth',
-      element: <Layout />,
-      children: [
-        {
-          path: 'login',
-          element: <LoginPage />,
-        },
-      ],
-    },
-    {
-      path: '*',
-      element: <ErrorPage />,
-    },
-  ]);
-
-  return routes;
+  return useRoutes(routes);
 };
 
 export default AppRoutes;

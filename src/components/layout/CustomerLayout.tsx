@@ -1,14 +1,14 @@
 import React from 'react';
-import Header from './Header';
+import Header from './header/Header';
 import { Outlet } from 'react-router-dom';
-import Footer from './Footer';
+import Footer from './footer/Footer';
 import FloatingActionMenu from '../common/FloatingActionMenu';
 
 interface LayoutProps {
   children?: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const CustomerLayout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -19,4 +19,4 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 };
 
-export default Layout;
+export default CustomerLayout;

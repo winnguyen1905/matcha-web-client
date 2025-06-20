@@ -24,6 +24,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
+      console.log('Login attempt:', email, password, user);
       await account.createEmailPasswordSession(email, password);
       const currentUser = await account.get();
       setUser(currentUser);

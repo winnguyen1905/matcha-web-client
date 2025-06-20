@@ -1,22 +1,51 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/AuthContext';
-import AlertModal from '../../components/ui/AlertModal';
-import { Box, Button, TextField, Typography, Container, Paper, Grid, Link as MuiLink } from '@mui/material';
+import { useUser } from '../../hooks/useUser';
+import { Box, Button, TextField, Typography, Container, Paper, Grid, Link as MuiLink, CircularProgress } from '@mui/material';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, alert, closeAlert, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login, register } = useUser();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError('');
+    
     try {
       await login(email, password);
-      navigate('/'); // Redirect to home after successful login
-    } catch (error) {
-      // Error is already handled in the AuthContext
+      navigate('/');
+    } catch (err) {
+      setError('Invalid email or password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      await register(email, password, email.split('@')[0]);
+      navigate('/');
+    } catch (err) {
+      setError('Registration failed. Email might be already in use.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -32,9 +61,16 @@ const LoginPage: React.FC = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Sign in
+            Sign in or Register
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          
+          {error && (
+            <Typography color="error" align="center" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+          )}
+          
+          <Box component="div" sx={{ mt: 1 }}>
             <TextField
               margin="normal"
               required
@@ -42,10 +78,13 @@ const LoginPage: React.FC = () => {
               id="email"
               label="Email Address"
               name="email"
+              type="email"
               autoComplete="email"
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="normal"
@@ -58,34 +97,41 @@ const LoginPage: React.FC = () => {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
               disabled={isLoading}
-              sx={{ mt: 3, mb: 2 }}
-            >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
-            <Grid container justifyContent="flex-end">
+              sx={{ mb: 3 }}
+            />
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleLogin}
+                disabled={isLoading}
+                sx={{ py: 1.5 }}
+              >
+                {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
+              </Button>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleRegister}
+                disabled={isLoading}
+                sx={{ py: 1.5 }}
+              >
+                Register
+              </Button>
+            </Box>
+            
+            <Grid container justifyContent="center">
               <Grid item>
-                <MuiLink component={Link} to="/auth/register" variant="body2">
-                  Don't have an account? Sign Up
+                <MuiLink component={Link} to="/forgot-password" variant="body2">
+                  Forgot password?
                 </MuiLink>
               </Grid>
             </Grid>
           </Box>
         </Paper>
       </Box>
-
-      <AlertModal
-        open={alert.open}
-        title={alert.severity === 'error' ? 'Error' : 'Success'}
-        message={alert.message}
-        severity={alert.severity || 'info'}
-        onClose={closeAlert}
-      />
     </Container>
   );
 };

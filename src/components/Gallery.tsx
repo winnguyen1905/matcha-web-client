@@ -36,7 +36,7 @@ const Gallery = () => {
             Gallery
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Take a visual journey through Emery's Corner and see what makes our space 
+            Take a visual journey through Senchaa and see what makes our space 
             so special and welcoming to our community.
           </p>
         </div>
