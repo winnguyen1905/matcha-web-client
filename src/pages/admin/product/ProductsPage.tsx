@@ -16,33 +16,53 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { Search, Edit, Delete, Add } from '@mui/icons-material';
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-  status: 'In Stock' | 'Out of Stock' | 'Low Stock';
-}
+import { useProducts } from '../../../context/Product';
+import type { Product } from '../../../context/Product';
+import { useNotification } from '../../../context/NotificationContext';
+import ProductDialog from './ProductDialog';
 
 const ProductsPage: React.FC = () => {
+  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { showNotification } = useNotification();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Mock data
-  const products: Product[] = [
-    { id: '1', name: 'Matcha Latte', category: 'Drinks', price: 4.99, stock: 50, status: 'In Stock' },
-    { id: '2', name: 'Matcha Ice Cream', category: 'Desserts', price: 3.99, stock: 25, status: 'In Stock' },
-    { id: '3', name: 'Matcha Cake', category: 'Desserts', price: 5.99, stock: 3, status: 'Low Stock' },
-    { id: '4', name: 'Matcha Cookies', category: 'Snacks', price: 2.99, stock: 0, status: 'Out of Stock' },
-  ];
+  const handleOpenDialog = (product: Product | null = null) => {
+    setEditingProduct(product);
+    setOpenDialog(true);
+  };
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEditingProduct(null);
+  };
+
+  const handleSubmitProduct = async (formData: Omit<Product, '$id'>, imageFiles: File[]) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.$id, formData, imageFiles);
+        showNotification('Product updated successfully!', 'success');
+      } else {
+        await addProduct(formData, imageFiles);
+        showNotification('Product created successfully!', 'success');
+      }
+    } catch (error: any) {
+      showNotification(error.message || 'Failed to save product', 'error');
+      throw error; // Re-throw to prevent dialog from closing
+    }
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(searchLower) ||
+      (product.category?.toLowerCase().includes(searchLower) ?? false) ||
+      (product.description?.toLowerCase().includes(searchLower) ?? false)
+    );
+  });
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -53,14 +73,25 @@ const ProductsPage: React.FC = () => {
     setPage(0);
   };
 
-  const handleEdit = (id: string) => {
-    // Handle edit
-    console.log('Edit product:', id);
+  const getStatus = (stock: number) => {
+    if (stock === 0) return 'Out of Stock';
+    if (stock < 5) return 'Low Stock';
+    return 'In Stock';
   };
 
-  const handleDelete = (id: string) => {
-    // Handle delete
-    console.log('Delete product:', id);
+  const handleEdit = (product: Product) => {
+    handleOpenDialog(product);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await deleteProduct(id);
+        showNotification('Product deleted successfully!', 'success');
+      } catch (error: any) {
+        showNotification(error.message || 'Failed to delete product', 'error');
+      }
+    }
   };
 
   return (
@@ -69,7 +100,11 @@ const ProductsPage: React.FC = () => {
         <Typography variant="h4" component="h1">
           Products
         </Typography>
-        <Button variant="contained" startIcon={<Add />}>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => handleOpenDialog()}
+        >
           Add Product
         </Button>
       </Box>
@@ -107,10 +142,10 @@ const ProductsPage: React.FC = () => {
             {filteredProducts
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((product) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.$id}>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell align="right">${product.price.toFixed(2)}</TableCell>
+                  <TableCell align="right">${product.newPrice.toFixed(2)}</TableCell>
                   <TableCell align="right">{product.stock}</TableCell>
                   <TableCell>
                     <Box
@@ -118,24 +153,26 @@ const ProductsPage: React.FC = () => {
                       sx={{
                         p: 0.5,
                         borderRadius: 1,
-                        backgroundColor:
-                          product.status === 'In Stock'
+                        backgroundColor: (() => {
+                          const status = getStatus(product.stock);
+                          return status === 'In Stock'
                             ? 'success.light'
-                            : product.status === 'Low Stock'
+                            : status === 'Low Stock'
                             ? 'warning.light'
-                            : 'error.light',
+                            : 'error.light';
+                        })(),
                         color: 'white',
                         fontSize: '0.75rem',
                       }}
                     >
-                      {product.status}
+                      {getStatus(product.stock)}
                     </Box>
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(product.id)}>
+                    <IconButton onClick={() => handleEdit(product)}>
                       <Edit />
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(product.id)}>
+                    <IconButton onClick={() => handleDelete(product.$id)}>
                       <Delete />
                     </IconButton>
                   </TableCell>
@@ -153,6 +190,13 @@ const ProductsPage: React.FC = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </TableContainer>
+
+      <ProductDialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        onSubmit={handleSubmitProduct}
+        editingProduct={editingProduct}
+      />
     </Box>
   );
 };

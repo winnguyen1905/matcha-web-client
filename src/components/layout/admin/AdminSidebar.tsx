@@ -1,33 +1,36 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
-  ListItemText, 
-  Box, 
-  Typography, 
-  IconButton, 
-  useTheme, 
-  useMediaQuery, 
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  IconButton,
+  useTheme,
+  useMediaQuery,
   styled,
   Tooltip
 } from '@mui/material';
-import { 
-  DashboardOutlined, 
-  ShoppingCartOutlined, 
-  PeopleOutline, 
+import {
+  DashboardOutlined,
+  ShoppingCartOutlined,
+  PeopleOutline,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  NotificationsOutlined,
+  SettingsOutlined
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { useThemeMode } from '../../../context/ThemeModeContext';
+import { useUser } from '../../../hooks/useUser';
 
 const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 180;
@@ -81,6 +84,7 @@ const StyledDrawer = styled(Drawer, {
 
 export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCollapse }: AdminSidebarProps) => {
   const theme = useTheme();
+  const { current } = useUser();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { mode, toggleMode } = useThemeMode();
   const navigate = useNavigate();
@@ -94,6 +98,9 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
     { text: 'Dashboard', icon: <DashboardOutlined />, path: '/admin' },
     { text: 'Products', icon: <ShoppingCartOutlined />, path: '/admin/products' },
     { text: 'Users', icon: <PeopleOutline />, path: '/admin/users' },
+    { text: 'Orders', icon: <ShoppingCartOutlined />, path: '/admin/orders' },
+    { text: 'Notifications', icon: <NotificationsOutlined />, path: '/admin/notifications' },
+    { text: 'Settings', icon: <SettingsOutlined />, path: '/admin/settings' }
   ];
 
   useEffect(() => {
@@ -129,12 +136,12 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
       tl.fromTo(
         validMenuItems,
         { opacity: 0, x: -20 },
-        { 
-          opacity: 1, 
-          x: 0, 
-          duration: 0.3, 
-          stagger: 0.08, 
-          ease: 'power2.out' 
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.3,
+          stagger: 0.08,
+          ease: 'power2.out'
         }
       );
     }
@@ -168,43 +175,32 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
             px: 2,
             py: 1.5,
             transition: 'all 0.2s ease-in-out',
-            backgroundColor: active 
-              ? theme.palette.primary.main 
+            backgroundColor: active
+              ? theme.palette.primary.main
               : 'transparent',
             '&:hover': {
-              backgroundColor: active 
-                ? theme.palette.primary.dark 
+              backgroundColor: active
+                ? theme.palette.primary.dark
                 : theme.palette.action.hover,
             },
           }}
         >
-          <ListItemIcon 
+          <ListItemIcon
             sx={{
-              minWidth: isCollapsed ? '48px' : 40,
-              color: active 
-                ? theme.palette.primary.contrastText 
+              minWidth: 40,
+              color: active
+                ? theme.palette.primary.contrastText
                 : theme.palette.text.primary,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              '& svg': {
-                fontSize: isCollapsed ? '1.5rem' : '1.25rem',
-                width: isCollapsed ? '24px' : '20px',
-                height: isCollapsed ? '24px' : '20px',
-              },
-              borderRadius: isCollapsed ? '50%' : '0',
-              padding: isCollapsed ? '8px' : '0',
-              backgroundColor: isCollapsed ? (active ? theme.palette.primary.main : theme.palette.action.hover) : 'transparent',
             }}
           >
             {item.icon}
           </ListItemIcon>
           {sidebarWidth > MIN_WIDTH + 40 && (
-            <ListItemText 
+            <ListItemText
               primary={item.text}
               primaryTypographyProps={{
-                color: active 
-                  ? theme.palette.primary.contrastText 
+                color: active
+                  ? theme.palette.primary.contrastText
                   : theme.palette.text.primary,
                 fontWeight: 500,
                 fontSize: '0.9375rem',
@@ -242,20 +238,13 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
     >
       <Box
         sx={{
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 0.5,
-          px: 0.5,
-          '& .MuiListItem-root': {
-            mx: 0.5,
-            '&:last-child': {
-              mb: 0.5,
-            }
-          }
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
         }}
       >
         {/* Header */}
-        <Box 
+        <Box
           sx={{
             p: 3,
             borderBottom: `1px solid ${theme.palette.divider}`,
@@ -266,33 +255,33 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
         >
           {sidebarWidth > MIN_WIDTH + 40 && (
             <Box sx={{ textAlign: isCollapsed ? 'center' : 'left', width: '100%' }}>
-              <Typography 
-                variant="h6" 
-                sx={{ 
+              <Typography
+                variant="h6"
+                sx={{
                   fontWeight: 700,
                   color: theme.palette.text.primary,
                   fontSize: isCollapsed ? '0.75rem' : '1.25rem',
                   lineHeight: isCollapsed ? 1.2 : 1.5,
                 }}
               >
-                {isCollapsed ? 'AP' : 'Admin Panel'}
+                {isCollapsed ? 'AP' : 'Whats Up '}
               </Typography>
               {!isCollapsed && (
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
+                <Typography
+                  variant="body2"
+                  sx={{
                     color: theme.palette.text.secondary,
                     mt: 0.5,
                   }}
                 >
-                  Administrator
+                  Hello {current?.name}
                 </Typography>
               )}
             </Box>
           )}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          {/* <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: isCollapsed ? 'center' : 'flex-end',
             width: '100%',
             pr: isCollapsed ? 0 : 1,
@@ -326,29 +315,29 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
             >
               <CloseIcon />
             </IconButton>
-          </Box>
+          </Box> */}
         </Box>
 
         {/* Menu Items */}
-        <Box sx={{ 
-            flex: 1, 
-            overflowY: 'auto', 
-            p: 1,
-            '&::-webkit-scrollbar': {
-              width: '6px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: theme.palette.divider,
-              borderRadius: '3px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              backgroundColor: theme.palette.action.hover,
-            },
-          }}>
-          <List sx={{ 
+        <Box sx={{
+          flex: 1,
+          overflowY: 'auto',
+          p: 1,
+          '&::-webkit-scrollbar': {
+            width: '6px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: theme.palette.divider,
+            borderRadius: '3px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: theme.palette.action.hover,
+          },
+        }}>
+          <List sx={{
             p: 1,
             '& .MuiListItem-root': {
               mx: 0.5,
@@ -360,7 +349,7 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
                   color: theme.palette.primary.contrastText,
                 },
               },
-            } 
+            }
           }}>
             {renderMenuItems()}
           </List>
@@ -387,106 +376,78 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
           />
         )}
 
-        {/* Main Content */}
-        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {/* Menu Items */}
-          <Box sx={{ flex: 1, overflowY: 'auto' }}>
-            <List sx={{ 
-              p: 1,
-              '& .MuiListItem-root': {
-                mx: 0.5,
-                mb: 1,
-                width: 'calc(100% - 8px)',
-                '&.Mui-selected, &.Mui-selected:hover': {
-                  backgroundColor: theme.palette.primary.main,
-                  '& .MuiListItemIcon-root, & .MuiTypography-root': {
-                    color: theme.palette.primary.contrastText,
-                  },
-                },
-              } 
-            }}>
-              {renderMenuItems()}
-            </List>
-          </Box>
-
-          {/* Footer */}
-          <Box sx={{ mt: 'auto' }}>
-            <Box 
+        {/* Footer - stick to bottom */}
+        <Box
+          sx={{
+            p: 2,
+            borderTop: `1px solid ${theme.palette.divider}`,
+            flexShrink: 0,
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <ListItem
+              button
+              onClick={onLogout}
               sx={{
-                p: 2,
-                borderTop: `1px solid ${theme.palette.divider}`,
+                borderRadius: 2,
+                px: 2,
+                py: 1,
+                color: theme.palette.error.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                alignItems: 'center',
+                justifyContent: 'flex-start',
               }}
             >
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 0.5,
-                '& .MuiListItem-root': {
-                  mx: 0.5,
-                  mb: 0.5,
-                  minHeight: 44,
-                  borderRadius: 1,
-                  '&:last-child': {
-                    mb: 0,
-                  }
+              <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+                <LogoutIcon />
+              </ListItemIcon>
+              {sidebarWidth > MIN_WIDTH + 40 && (
+                <ListItemText
+                  primary="Logout"
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    sx: { pl: 0 }
+                  }}
+                />
+              )}
+            </ListItem>
+            <ListItem
+              button
+              onClick={toggleMode}
+              sx={{
+                borderRadius: 1,
+                px: isCollapsed ? 0 : 1,
+                py: 1,
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                minHeight: 44,
+                '& .MuiListItemIcon-root': {
+                  minWidth: isCollapsed ? 'auto' : 32,
+                  color: 'inherit',
+                  display: 'flex',
+                  justifyContent: 'center',
                 }
-              }}>
-                <ListItem
-                  button
-                  onClick={onLogout}
-                  sx={{
-                    color: theme.palette.error.main,
-                    '&:hover': {
-                      backgroundColor: theme.palette.error.light + '1a',
-                    },
-                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    px: isCollapsed ? 0 : 2,
+              }}
+            >
+              <ListItemIcon>
+                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+              </ListItemIcon>
+              {!isCollapsed && (
+                <ListItemText
+                  primary={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    sx: { pl: 0 }
                   }}
-                >
-                  <ListItemIcon sx={{ 
-                    minWidth: isCollapsed ? 'auto' : 40,
-                    color: 'inherit',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    '& svg': {
-                      fontSize: isCollapsed ? '1.5rem' : '1.25rem',
-                    }
-                  }}>
-                    <LogoutIcon />
-                  </ListItemIcon>
-                  {!isCollapsed && 'Logout'}
-                </ListItem>
-                <ListItem
-                  button
-                  onClick={toggleMode}
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    '&:hover': {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    px: isCollapsed ? 0 : 2,
-                  }}
-                >
-                  <ListItemIcon sx={{ 
-                    minWidth: isCollapsed ? 'auto' : 40,
-                    color: 'inherit',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    '& svg': {
-                      fontSize: isCollapsed ? '1.5rem' : '1.25rem',
-                    }
-                  }}>
-                    {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-                  </ListItemIcon>
-                  {!isCollapsed && (
-                    <Typography variant="body2">
-                      {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                    </Typography>
-                  )}
-                </ListItem>
-              </Box>
-            </Box>
+                />
+              )}
+            </ListItem>
           </Box>
         </Box>
       </Box>

@@ -5,79 +5,10 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { BrowserRouter, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { UserProvider, useUser } from './hooks/useUser';
+import { ProductsProvider } from './context/Product';
 import AppRoutes from './routes';
 import { lightTheme } from './theme';
-
-// const Navbar = () => {
-//   const { current: user, logout } = useUser();
-//   const { isAuthenticated } = useAuth();
-//   const navigate = useNavigate();
-//   const location = useLocation();
-
-//   const handleLogout = async () => {
-//     try {
-//       await logout();
-//       navigate('/login');
-//     } catch (error) {
-//       console.error('Logout failed:', error);
-//     }
-//   };
-
-//   // Don't show navbar on login/register pages
-//   if (['/login', '/register'].includes(location.pathname)) {
-//     return null;
-//   }
-
-//   return (
-//     <AppBar position="static" color="default" elevation={0} sx={{ mb: 4 }}>
-//       <Container maxWidth="lg">
-//         <Toolbar disableGutters>
-//           <Typography
-//             variant="h6"
-//             component={RouterLink}
-//             to="/"
-//             sx={{
-//               flexGrow: 1,
-//               textDecoration: 'none',
-//               color: 'inherit',
-//               fontWeight: 700,
-//             }}
-//           >
-//             Trà Matcha A Hiếu
-//           </Typography>
-
-//           {isAuthenticated ? (
-//             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-//               <Button
-//                 component={RouterLink}
-//                 to="/profile"
-//                 color="inherit"
-//               >
-//                 {user?.email || 'Profile'}
-//               </Button>
-//               <Button
-//                 variant="outlined"
-//                 color="inherit"
-//                 onClick={handleLogout}
-//               >
-//                 Logout
-//               </Button>
-//             </Box>
-//           ) : (
-//             <Button
-//               component={RouterLink}
-//               to="/login"
-//               color="inherit"
-//               variant="outlined"
-//             >
-//               Login
-//             </Button>
-//           )}
-//         </Toolbar>
-//       </Container>
-//     </AppBar>
-//   );
-// };
+import { NotificationProvider } from './context/NotificationContext';
 
 const AppContent = () => {
   return (
@@ -92,13 +23,17 @@ const App: React.FC = () => {
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <AuthProvider>
-          <UserProvider>
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </UserProvider>
-        </AuthProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <UserProvider>
+              <ProductsProvider>
+                <BrowserRouter>
+                  <AppContent />
+                </BrowserRouter>
+              </ProductsProvider>
+            </UserProvider>
+          </AuthProvider>
+        </NotificationProvider>
       </LocalizationProvider>
     </ThemeProvider>
   );

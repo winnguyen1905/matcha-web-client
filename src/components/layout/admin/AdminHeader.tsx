@@ -234,7 +234,7 @@ export const AdminHeader = ({
                   }
                 }}
               >
-                Admin Dashboard
+                Sencha Admin
               </Typography>
             </Box>
           </Box>

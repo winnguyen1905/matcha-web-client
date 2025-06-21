@@ -1,6 +1,6 @@
-import DashboardPage from '../../pages/admin/DashboardPage';
-import ProductsPage from '../../pages/admin/ProductsPage';
-import UsersPage from '../../pages/admin/UsersPage';
+import DashboardPage from '../../pages/admin/dashboard/DashboardPage';
+import ProductsPage from '../../pages/admin/product/ProductsPage';
+import UsersPage from '../../pages/admin/account/UsersPage';
 import { Navigate } from 'react-router-dom';
 
 const adminRoutes = [

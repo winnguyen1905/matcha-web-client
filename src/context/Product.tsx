@@ -1,49 +1,138 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { databases, storage } from "../lib/appwrite";
 import { ID, Query } from "appwrite";
+import { Client, Databases, Storage } from 'appwrite';
 
-export const PRODUCTS_DATABASE_ID = "<YOUR_DATABASE_ID>"; // Replace with your database ID
-export const PRODUCTS_COLLECTION_ID = "<YOUR_COLLECTION_ID>"; // Replace with your collection ID
-export const PRODUCT_IMAGES_BUCKET_ID = "<YOUR_BUCKET_ID>"; // Replace with your bucket ID for product images
+export const PRODUCTS_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || "";
+export const PRODUCTS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID || "products";
+export const PRODUCT_IMAGES_BUCKET_ID = import.meta.env.VITE_APPWRITE_BUCKET_ID || "product_images";
+export const PRODUCT_API_KEY = import.meta.env.VITE_APPWRITE_API_KEY || "";
 
-interface ProductFeatures {
-  // Common product specifications
-  weight?: string;
-  dimensions?: string;
-  material?: string[];
-  origin?: string;
-  // Add more specific features as needed
-  [key: string]: any;
+// Initialize Appwrite client
+const client = new Client()
+  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '');
+
+if (PRODUCT_API_KEY) {
+  client.headers['X-Appwrite-Key'] = PRODUCT_API_KEY;
 }
 
-interface AppwriteDocument {
-  $id: string;
-  $collectionId: string;
-  $databaseId: string;
-  $createdAt: string;
-  $updatedAt: string;
-  $permissions: string[];
-  [key: string]: any;
+const databases = new Databases(client);
+const storage = new Storage(client);
+
+// This function should be called when your app starts to ensure the collection is set up
+export const initializeProductsCollection = async () => {
+  try {
+    // In Appwrite, databases and collections are typically created through the Appwrite Console
+    // or CLI. Here we'll just verify the collection exists and log its structure.
+    console.log('Verifying products collection...');
+
+    // Try to list documents to verify the collection exists
+    try {
+      await databases.listDocuments(PRODUCTS_DATABASE_ID, PRODUCTS_COLLECTION_ID);
+      console.log('Products collection is accessible');
+      return true;
+    } catch (error) {
+      console.error('Error accessing products collection. Please ensure it exists in your Appwrite project.');
+      console.log('Required collection structure:');
+      console.log(JSON.stringify({
+        databaseId: PRODUCTS_DATABASE_ID,
+        collectionId: PRODUCTS_COLLECTION_ID,
+        name: 'Products',
+        documentSecurity: true,
+        attributes: [
+          { key: 'name', type: 'string', size: 255, required: true },
+          { key: 'description', type: 'string', size: 1000, required: true },
+          { key: 'price', type: 'double', required: false },
+          { key: 'category', type: 'string', size: 100, required: true },
+          { key: 'imageUrls', type: 'string', required: false, array: true },
+          { key: 'stock', type: 'integer', required: true },
+          { key: 'isFeatured', type: 'boolean', required: false, default: false },
+          { key: 'features', type: 'json', required: false }
+        ]
+      }, null, 2));
+
+      throw new Error('Products collection is not properly set up. Please create it in the Appwrite Console with the above structure.');
+    }
+  } catch (error) {
+    console.error('Error initializing products collection:', error);
+    throw error;
+  }
+};
+
+export interface ProductFeatures {
+  name: string;
+  weight: number;
+  dimensions: string;
+  material: string[];
+  origin: string;
+  price: number;
+  attributes?: Record<string, string>;
 }
 
-interface Product extends Omit<AppwriteDocument, 'features'> {
+export interface Product extends Omit<AppwriteDocument, 'features'> {
+
   name: string;
   description: string;
-  price: number;
+  oldPrice: number;
+  newPrice: number;
   category: string;
   imageUrls?: string[];
   stock: number;
   isFeatured?: boolean;
-  features?: ProductFeatures;
+  isPublished?: boolean;
+  features?: ProductFeatures[];
+  attributes?: Record<string, string>;
 }
 
-// Helper function to parse features from Appwrite response
+interface AppwriteDocument {
+  $id: string;
+  $collectionId?: string;
+  $databaseId?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
+  $permissions?: string[];
+
+}
+
 const parseProductFromResponse = (response: any): Product => {
-  // Support both imageUrl (legacy) and imageUrls (new)
   let imageUrls: string[] | undefined = response.imageUrls;
   if (!imageUrls && response.imageUrl) {
     imageUrls = [response.imageUrl];
   }
+
+  // Helper to parse attributes to Record<string, string>
+  function parseAttributes(attr: any): Record<string, string> {
+    if (!attr) return {};
+    if (typeof attr === 'string') {
+      try {
+        return JSON.parse(attr);
+      } catch {
+        return {};
+      }
+    }
+    if (typeof attr === 'object') {
+      return attr;
+    }
+    return {};
+  }
+
+  // Parse features and their attributes
+  let features: ProductFeatures[] | undefined = undefined;
+  if (response.features) {
+    const rawFeatures = typeof response.features === 'string' ? JSON.parse(response.features) : response.features;
+    if (Array.isArray(rawFeatures)) {
+      features = rawFeatures.map((f: any) => ({
+        ...f,
+        attributes: parseAttributes(f.attributes)
+      }));
+    } else if (typeof rawFeatures === 'object') {
+      features = [{
+        ...rawFeatures,
+        attributes: parseAttributes(rawFeatures.attributes)
+      }];
+    }
+  }
+
   return {
     ...response,
     name: response.name || '',
@@ -52,11 +141,8 @@ const parseProductFromResponse = (response: any): Product => {
     category: response.category || '',
     stock: Number(response.stock) || 0,
     isFeatured: Boolean(response.isFeatured),
-    features: response.features 
-      ? (typeof response.features === 'string' 
-          ? JSON.parse(response.features) 
-          : response.features)
-      : undefined,
+    features,
+    attributes: parseAttributes(response.attributes),
     imageUrls,
   };
 };
@@ -71,6 +157,7 @@ interface ProductContextType {
   getProductById: (id: string) => Promise<Product | null>;
   getProductsByCategory: (category: string) => Promise<Product[]>;
   getFeaturedProducts: () => Promise<Product[]>;
+  init: () => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -88,7 +175,23 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Upload images to storage bucket
+  const init = async () => {
+    try {
+      setLoading(true);
+      const response = await databases.listDocuments(
+        PRODUCTS_DATABASE_ID,
+        PRODUCTS_COLLECTION_ID,
+        [Query.orderDesc("$createdAt")]
+      );
+      setProducts(response.documents.map(doc => parseProductFromResponse(doc)));
+    } catch (err) {
+      console.error("Error initializing products:", err);
+      setError("Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const uploadImages = async (files: File[]): Promise<string[]> => {
     try {
       const urls: string[] = [];
@@ -98,81 +201,169 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           ID.unique(),
           file
         );
-        const fileUrl = storage.getFilePreview(
-          PRODUCT_IMAGES_BUCKET_ID,
-          response.$id
-        );
-        urls.push(fileUrl.toString());
+        urls.push(`https://cloud.appwrite.io/v1/storage/buckets/${PRODUCT_IMAGES_BUCKET_ID}/files/${response.$id}/view?project=${import.meta.env.VITE_APPWRITE_PROJECT_ID}`);
       }
       return urls;
     } catch (err) {
       console.error("Error uploading images:", err);
-      throw new Error("Failed to upload images");
+      throw err;
     }
   };
 
-  // Add a new product
-  const addProduct = async (product: Omit<Product, '$id'>, imageFiles?: File[]) => {
+  const validateProductData = (productData: Omit<Product, '$id'>): Omit<Product, '$id'> => {
+    // Validate category
+    const validCategories = ["SWEET", "MATCHA", "TOOL"];
+    if (!validCategories.includes(productData.category)) {
+      throw new Error('Invalid category. Must be one of: ' + validCategories.join(', '));
+    }
+
+    // Validate price
+    const oldPrice = Number(productData.oldPrice);
+    if (isNaN(oldPrice) || oldPrice < 0) {
+      throw new Error('Old price must be a non-negative number');
+    }
+
+    const newPrice = Number(productData.newPrice);
+    if (isNaN(newPrice) || newPrice < 0) {
+      throw new Error('New price must be a non-negative number');
+    }
+
+    if (newPrice == oldPrice) {
+      throw new Error('New price must be different from old price');
+    }
+
+    // Validate stock
+    const stock = Number(productData.stock);
+    if (isNaN(stock) || !Number.isInteger(stock) || stock < 0) {
+      throw new Error('Stock must be a non-negative integer');
+    }
+
+
+
+    productData.features?.forEach((feature: ProductFeatures) => {
+      // Validate features.price if it exists
+      if (feature.price !== undefined) {
+        const featuresPrice = Number(feature.price);
+        if (isNaN(featuresPrice) || featuresPrice < 0) {
+          throw new Error('Features price must be a non-negative number');
+        }
+        // Update the features object with the validated number
+        feature.price = featuresPrice;
+      }
+
+      if (feature.weight !== undefined) {
+        const featuresWeight = Number(feature.weight);
+        if (isNaN(featuresWeight) || featuresWeight < 0) {
+          throw new Error('Features weight must be a non-negative number');
+        }
+        // Update the features object with the validated number
+        feature.weight = featuresWeight;
+      }
+
+    });
+
+    return {
+      ...productData,
+      oldPrice,
+      newPrice,
+      stock
+    };
+  };
+
+  const addProduct = async (product: Omit<Product, '$id'>, imageFiles: File[] = []) => {
     try {
       setLoading(true);
-      setError(null);
-      let imageUrls = product.imageUrls || [];
-      // Upload new images if provided
-      if (imageFiles && imageFiles.length > 0) {
-        imageUrls = await uploadImages(imageFiles);
-      }
-      const newProduct = {
-        ...product,
+
+      // Validate product data
+      const validatedData: Omit<Product, '$id'> = validateProductData(product);
+
+      // Upload images if any
+      const imageUrls = imageFiles.length > 0 ? await uploadImages(imageFiles) : [];
+
+      // Process features to stringify any attributes
+      const processedFeatures = validatedData.features?.map(feature => ({
+        ...feature,
+        attributes: feature.attributes ? JSON.stringify(feature.attributes) : undefined
+      }));
+
+      const productData = {
+        ...validatedData,
         imageUrls,
-        price: Number(product.price), // Ensure price is a number
-        stock: Number(product.stock)  // Ensure stock is a number
+        $id: ID.unique(),
+        features: processedFeatures,
+        attributes: validatedData.attributes ? JSON.stringify(validatedData.attributes) : undefined,
       };
+
+
       const response = await databases.createDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
-        ID.unique(),
-        newProduct
+        productData.$id,
+        productData
       );
-      const parsedProduct = parseProductFromResponse(response);
-      setProducts(prevProducts => [parsedProduct, ...prevProducts]);
-    } catch (err) {
-      console.error("Error adding product:", err);
-      setError("Failed to add product");
-      throw err;
+      setProducts(prev => [parseProductFromResponse(response), ...prev]);
+    } catch (err: any) {
+      if (err.code !== 409) {
+        console.error("Error adding product:", err);
+        setError("Failed to add product");
+        throw err;
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Update an existing product
-  const updateProduct = async (id: string, updates: Partial<Product>, imageFiles?: File[]) => {
+  const updateProduct = async (id: string, updates: Partial<Product>, imageFiles: File[] = []) => {
     try {
       setLoading(true);
-      setError(null);
-      const currentProduct = products.find(p => p.$id === id);
-      if (!currentProduct) {
-        throw new Error("Product not found");
+
+      // Create a copy of updates to avoid mutating the original
+      const updatesToSend = { ...updates };
+
+      // Validate number fields if they exist in updates
+      if ('price' in updatesToSend) {
+        const price = Number(updatesToSend.price);
+        if (isNaN(price) || price < 0) {
+          throw new Error('Price must be a non-negative number');
+        }
+        updatesToSend.price = price;
       }
-      let imageUrls = updates.imageUrls || currentProduct.imageUrls || [];
-      // Upload new images if provided
-      if (imageFiles && imageFiles.length > 0) {
-        imageUrls = await uploadImages(imageFiles);
+
+      if ('stock' in updatesToSend) {
+        const stock = Number(updatesToSend.stock);
+        if (isNaN(stock) || !Number.isInteger(stock) || stock < 0) {
+          throw new Error('Stock must be a non-negative integer');
+        }
+        updatesToSend.stock = stock;
       }
-      const updatedProduct = {
-        ...updates,
-        imageUrls,
-        price: updates.price ? Number(updates.price) : currentProduct.price,
-        stock: updates.stock ? Number(updates.stock) : currentProduct.stock
-      };
+
+      // Validate category if it's being updated
+      if ('category' in updatesToSend) {
+        const validCategories = ["SWEET", "MATCHA", "TOOL"];
+        if (!validCategories.includes(updatesToSend.category as string)) {
+          throw new Error('Invalid category. Must be one of: ' + validCategories.join(', '));
+        }
+      }
+
+      // Upload new images if any
+      if (imageFiles.length > 0) {
+        const imageUrls = await uploadImages(imageFiles);
+        updatesToSend.imageUrls = [...(updates.imageUrls || []), ...imageUrls];
+      }
+
+      // if (updates.features) {
+      //   updatesToSend.features = JSON.stringify(updates.features);
+      // }
+
       const response = await databases.updateDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         id,
-        updatedProduct
+        updatesToSend
       );
-      const parsedProduct = parseProductFromResponse(response);
-      setProducts(prevProducts => 
-        prevProducts.map(p => p.$id === id ? parsedProduct : p)
+
+      setProducts(prev =>
+        prev.map(p => (p.$id === id ? parseProductFromResponse(response) : p))
       );
     } catch (err) {
       console.error("Error updating product:", err);
@@ -183,19 +374,15 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Delete a product
   const deleteProduct = async (id: string) => {
     try {
       setLoading(true);
-      setError(null);
-      
       await databases.deleteDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         id
       );
-      
-      setProducts(prevProducts => prevProducts.filter(p => p.$id !== id));
+      setProducts(prev => prev.filter(p => p.$id !== id));
     } catch (err) {
       console.error("Error deleting product:", err);
       setError("Failed to delete product");
@@ -205,9 +392,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Get a single product by ID
   const getProductById = async (id: string): Promise<Product | null> => {
     try {
+      setLoading(true);
       const response = await databases.getDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
@@ -216,13 +403,16 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return parseProductFromResponse(response);
     } catch (err) {
       console.error("Error fetching product:", err);
+      setError("Failed to fetch product");
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Get products by category
   const getProductsByCategory = async (category: string): Promise<Product[]> => {
     try {
+      setLoading(true);
       const response = await databases.listDocuments(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
@@ -231,48 +421,33 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       return response.documents.map(parseProductFromResponse);
     } catch (err) {
       console.error("Error fetching products by category:", err);
+      setError("Failed to fetch products by category");
       return [];
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Get featured products
   const getFeaturedProducts = async (): Promise<Product[]> => {
     try {
+      setLoading(true);
       const response = await databases.listDocuments(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
-        [
-          Query.equal("isFeatured", [true]),
-          Query.limit(8) // Limit to 8 featured products
-        ]
+        [Query.equal("isFeatured", [true])]
       );
       return response.documents.map(parseProductFromResponse);
     } catch (err) {
       console.error("Error fetching featured products:", err);
+      setError("Failed to fetch featured products");
       return [];
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Load all products on component mount
   useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await databases.listDocuments(
-          PRODUCTS_DATABASE_ID,
-          PRODUCTS_COLLECTION_ID,
-          [Query.orderDesc("$createdAt")]
-        );
-        setProducts(response.documents.map(parseProductFromResponse));
-      } catch (err) {
-        console.error("Error loading products:", err);
-        setError("Failed to load products");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
+    init();
   }, []);
 
   const value = {
@@ -285,6 +460,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     getProductById,
     getProductsByCategory,
     getFeaturedProducts,
+    init,
   };
 
   return (
