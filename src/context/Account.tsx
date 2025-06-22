@@ -5,22 +5,24 @@ import { databases, account } from '../lib/appwrite';
 // Environment variables with proper type safety
 const ENV = {
   DATABASE_ID: import.meta.env.VITE_APPWRITE_DATABASE_ID || '',
-  COLLECTION_ID: import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || 'accounts',
+  COLLECTION_ID: import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || '',
   API_KEY: import.meta.env.VITE_APPWRITE_API_KEY || '',
-  ENDPOINT: import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1',
+  ENDPOINT: import.meta.env.VITE_APPWRITE_ENDPOINT || '',
   PROJECT_ID: import.meta.env.VITE_APPWRITE_PROJECT_ID || ''
 } as const;
+
+export type Labels = 'ADMIN' | 'MANAGER' | 'CUSTOMER';
 
 // Types
 export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
 
-export type UserLanguage = 'VI' | 'EN';
+export type UserLanguage = 'VI' | 'EN' | 'CN';
 
-export type UserNotifications = 'EMAIL' | 'SMS' | 'PUSH';
+export type UserNotification = 'EMAIL' | 'SMS' | 'PUSH';
 
 export interface UserPreferences {
   theme?: ThemePreference;
-  notifications?: UserNotifications[];
+  notifications?: UserNotification[];
   language?: UserLanguage;
 }
 
@@ -38,8 +40,7 @@ export interface UserAccount extends Omit<Models.User<Models.Preferences>, 'phon
   name: string;
   phone: string;
   status: boolean;
-  // Use labels for roles and tags
-  labels: string[];
+  labels: Labels[];
   address: string;
   preferences: UserPreferences;
   isEmailVerified: boolean;
@@ -92,7 +93,7 @@ interface AccountContextType {
   verifyEmail: (userId: string, secret: string) => Promise<UserAccount>;
   
   // Admin functions
-  updateUserRole: (userId: string, role: string) => Promise<void>;
+  updateUserRole: (userId: string, role: Labels) => Promise<void>;
   updateUserStatus: (userId: string, status: boolean) => Promise<void>;
   refreshSession: () => Promise<{ session: Models.Session; user: UserAccount } | null>;
   updateProfile: (updates: Partial<UserAccount>) => Promise<void>;
@@ -579,7 +580,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       if (!currentUser) throw new Error('No user logged in');
       await account.createVerification(`${window.location.origin}/verify-email`);
     },
-    updateUserRole: async (userId: string, role: string) => {
+    updateUserRole: async (userId: string, role: Labels) => {
       // Add or remove role in labels
       const user = await getUserById(userId);
       if (!user) throw new Error('User not found');

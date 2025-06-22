@@ -1,18 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, ChevronDown, X, Leaf } from 'lucide-react';
+import { ProductCategory } from '../context/Product';
 
 interface MatchaSearchFilterProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  selectedCategory: string;
-  setSelectedCategory: (category: string) => void;
+  selectedCategory: ProductCategory | undefined;
+  setSelectedCategory: (category: ProductCategory) => void;
   priceRange: [number, number];
   setPriceRange: (range: [number, number]) => void;
   sortBy: string;
   setSortBy: (sort: string) => void;
 }
-
-type CategoryType = 'all' | 'ceremonial-grade' | 'premium-grade' | 'culinary-grade' | 'matcha-tools' | 'tea-sets' | 'accessories' | 'gift-sets';
 
 const MatchaSearchFilter: React.FC<MatchaSearchFilterProps> = ({
   searchQuery,
@@ -33,26 +32,12 @@ const MatchaSearchFilter: React.FC<MatchaSearchFilterProps> = ({
   const leafRef = useRef<HTMLDivElement>(null);
 
   // Matcha tea categories
-  const categories: CategoryType[] = [
-    'all', 
-    'ceremonial-grade', 
-    'premium-grade', 
-    'culinary-grade',
-    'matcha-tools',
-    'tea-sets',
-    'accessories',
-    'gift-sets'
-  ];
+  const categories: ProductCategory[] = ['MATCHA', 'SWEET', 'TOOL'];
 
-  const categoryLabels: Record<CategoryType, string> = {
-    'all': '🍃 All Products',
-    'ceremonial-grade': '🏆 Ceremonial Grade',
-    'premium-grade': '⭐ Premium Grade',
-    'culinary-grade': '🍰 Culinary Grade',
-    'matcha-tools': '🥄 Matcha Tools',
-    'tea-sets': '🫖 Tea Sets',
-    'accessories': '✨ Accessories',
-    'gift-sets': '🎁 Gift Sets'
+  const categoryLabels: Record<ProductCategory, string> = {
+    'MATCHA': '🍵 Matcha',
+    'SWEET': '🍬 Sweets',
+    'TOOL': '🛠️ Tools',
   };
 
   // Check if mobile
@@ -147,8 +132,8 @@ const MatchaSearchFilter: React.FC<MatchaSearchFilterProps> = ({
 
   const handleClearFilters = () => {
     setSearchQuery('');
-    setSelectedCategory('all');
-    setPriceRange([0, 200]);
+    setSelectedCategory('MATCHA');
+    setPriceRange([0, 9999]);
     setSortBy('rating');
     
     if (window.gsap && containerRef.current) {
@@ -201,7 +186,7 @@ const MatchaSearchFilter: React.FC<MatchaSearchFilterProps> = ({
             {/* Category Filter */}
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => setSelectedCategory(e.target.value as ProductCategory)}
               className="border border-green-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/95 text-gray-700 transition-all duration-300 text-sm min-w-[140px]"
             >
               {categories.map((category) => (
@@ -299,7 +284,7 @@ const MatchaSearchFilter: React.FC<MatchaSearchFilterProps> = ({
             </label>
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => setSelectedCategory(e.target.value as ProductCategory)}
               className="w-full border border-green-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/95 text-gray-700 transition-all duration-300"
             >
               {categories.map((category) => (

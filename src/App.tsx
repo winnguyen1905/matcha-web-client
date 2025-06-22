@@ -1,10 +1,12 @@
 import React from 'react';
-import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { BrowserRouter, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './hooks/useAuth';
-import { UserProvider, useUser } from './hooks/useUser';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './app/store';
+import { AuthProvider } from './hooks/useAuth';
+import { UserProvider } from './hooks/useUser';
 import { ProductsProvider } from './context/Product';
 import AppRoutes from './routes';
 import { lightTheme } from './theme';
@@ -21,24 +23,26 @@ const AppContent = () => {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={lightTheme}>
-      <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <NotificationProvider>
-          <AuthProvider>
-            <AccountProvider>
-              <UserProvider>
-                <ProductsProvider>
-                  <BrowserRouter>
-                    <AppContent />
-                  </BrowserRouter>
-                </ProductsProvider>
-              </UserProvider>
-            </AccountProvider>
-          </AuthProvider>
-        </NotificationProvider>
-      </LocalizationProvider>
-    </ThemeProvider>
+    <Provider store={store}>
+      <ThemeProvider theme={lightTheme}>
+        <CssBaseline />
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <NotificationProvider>
+            <AuthProvider>
+              <AccountProvider>
+                <UserProvider>
+                  <ProductsProvider>
+                    <BrowserRouter>
+                      <AppContent />
+                    </BrowserRouter>
+                  </ProductsProvider>
+                </UserProvider>
+              </AccountProvider>
+            </AuthProvider>
+          </NotificationProvider>
+        </LocalizationProvider>
+      </ThemeProvider>
+    </Provider>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Container, Box, styled } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import { drawerWidth, collapsedWidth } from './AdminSidebar';
 
@@ -20,12 +20,13 @@ export const AdminMainContent = ({ isCollapsed }: AdminMainContentProps) => {
       padding: theme.spacing(2),
     },
   }));
+  
   return (
     <Main>
       <Box component="div" sx={{ height: '64px' }} /> {/* Toolbar spacer */}
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ width: '100%', p: 3 }}>
         <Outlet />
-      </Container>
+      </Box>
     </Main>
   );
 };

@@ -57,22 +57,27 @@ export const initializeProductsCollection = async () => {
   }
 };
 
-export interface ProductFeatures {
+export type ProductCategory = 'MATCHA' | 'SWEET' | 'TOOL'
+
+export interface ProductFeatures extends AppwriteDocument {
+  id?: string;
   name: string;
   weight: number;
   dimensions: string;
   material: string[];
   origin: string;
   price: number;
+  inStock: boolean;
   attributes?: Record<string, string>;
 }
 
 export interface Product extends Omit<AppwriteDocument, 'features'> {
+  $id: string;
   name: string;
   description: string;
   oldPrice: number;
   newPrice: number;
-  category: string;
+  category: ProductCategory;
   imageUrls?: string[];
   stock: number;
   isFeatured?: boolean;
@@ -81,8 +86,9 @@ export interface Product extends Omit<AppwriteDocument, 'features'> {
   attributes?: Record<string, string>;
 }
 
-interface AppwriteDocument {
-  $id: string;
+// Base Appwrite document interface
+export interface AppwriteDocument {
+  $id?: string;
   $collectionId?: string;
   $databaseId?: string;
   $createdAt?: string;
@@ -351,11 +357,21 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       //   updatesToSend.features = JSON.stringify(updates.features);
       // }
 
+      const processedFeatures = updatesToSend.features?.map(updateToSend => ({
+        ...updateToSend,
+        attributes: updateToSend.attributes ? JSON.stringify(updateToSend.attributes) : undefined
+      }));
+
+
       const response = await databases.updateDocument(
         PRODUCTS_DATABASE_ID,
         PRODUCTS_COLLECTION_ID,
         id,
-        updatesToSend
+        {
+          ...updatesToSend,
+          attributes: updatesToSend.attributes ? JSON.stringify(updatesToSend.attributes) : undefined,
+          features: processedFeatures
+        }
       );
 
       setProducts(prev =>

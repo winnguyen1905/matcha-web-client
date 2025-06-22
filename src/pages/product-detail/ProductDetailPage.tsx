@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft,
   ShoppingCart,
@@ -25,10 +25,12 @@ import {
   X,
   Info
 } from 'lucide-react';
-import { Product, ProductVariant } from '../../types/product-type';
 import { FEATURED_PRODUCTS } from '../../constants';
 import ProductInfoPanel from './ProductInfoPanel';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Product, ProductFeatures, useProducts } from '../../context/Product';
+import { addItem, prepareProductForCart } from '../../context/Cart';
+import { useAppDispatch } from '../../app/hooks';
 
 const ProductDetailPage: React.FC = () => {
   // Get the optional `id` route param as a string
@@ -45,34 +47,76 @@ const ProductDetailPage: React.FC = () => {
   const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [editForm, setEditForm] = useState<Partial<Product>>({});
   const [showInfoPanel, setShowInfoPanel] = useState<boolean>(false);
+  const { getProductById, loading, products: allProducts } = useProducts();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [selectedVariation, setSelectedVariation] = useState<ProductFeatures | null>(null);
+  const [showVariantPanel, setShowVariantPanel] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const dispatch = useAppDispatch();
 
-  // Get product data from constants
-  // Convert the (possibly undefined) route param to a number so it can be used as an array index
-  const productData = FEATURED_PRODUCTS.products[Number(id || 0)];
-
-  // Helper function to safely access product data
-  const getProductData = (): Product => ({
-    ...productData,
-    price: productData.variants?.[0]?.price || 0,
-    caffeineLevel: (productData.caffeineLevel as 'None' | 'Low' | 'Medium' | 'High' | undefined) || 'Medium',
-    features: [],
-    stock: productData.variants?.[0]?.stock || 0,
-    flavorNotes: productData.flavorNotes || [],
-    healthBenefits: productData.healthBenefits || [],
-    certifications: productData.certifications || [],
-    awards: productData.awards || [],
-    faq: productData.faq || [],
-    brewingInstructions: productData.brewingInstructions || {
-      traditional: '',
-      modern: '',
-      iced: ''
-    },
-    sustainability: productData.sustainability || {
-      isEcoFriendly: false,
-      packagingRecyclable: false,
-      carbonNeutral: false,
-      fairTrade: false
+  const handleAddToCart = (): void => {
+    if (!selectedVariation || !product) {
+      alert('Vui lòng chọn loại sản phẩm trước khi thêm vào giỏ hàng');
+      return;
     }
+
+    try {
+      // Prepare cart item using the utility function
+      const cartItem = prepareProductForCart(product, selectedVariation, quantity);
+      
+      // Dispatch add to cart action
+      dispatch(addItem({
+        product: cartItem.product,
+        variation: cartItem.variation,
+        quantity: cartItem.quantity
+      }));
+      
+      // Show success message
+      alert(`Đã thêm ${quantity} ${selectedVariation.name} vào giỏ hàng!`);
+      
+      // Reset quantity
+      setQuantity(1);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.');
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      getProductById(id).then(product => {
+        if (product) {
+          setProduct(product);
+          // Set the first variation as selected by default if available
+          if (product.features && product.features.length > 0) {
+            setSelectedVariation(product.features[0]);
+          }
+        }
+      });
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (product && allProducts && allProducts.length > 0) {
+      // Exclude current product and pick up to 4 others
+      const filtered = allProducts.filter(p => p.name !== product.name);
+      setRelatedProducts(filtered.slice(0, 4));
+    }
+  }, [product, allProducts]);
+
+  // Move conditional render below all hooks
+  const getProductData = (): Product => ({
+    ...product,
+    $id: product?.$id || '', // Ensure $id is always a string
+    name: product?.name || '',
+    description: product?.description || '',
+    oldPrice: product?.oldPrice ?? 0,
+    newPrice: product?.newPrice ?? 0,
+    category: product?.category || 'MATCHA',
+    stock: product?.stock ?? 0,
+    imageUrls: Array.isArray(product?.imageUrls) ? product.imageUrls : [],
+    features: Array.isArray(product?.features) ? product.features : [],
+    attributes: product?.attributes || {},
   });
 
   // Helper function to safely format dates
@@ -82,7 +126,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   // Helper function to safely access feature properties
-  const getFeatureProps = (feature: any) => ({
+  const getFeatureProps = (feature: { title?: string; description?: string }) => ({
     title: feature?.title || '',
     description: feature?.description || ''
   });
@@ -92,111 +136,35 @@ const ProductDetailPage: React.FC = () => {
     return arr || [];
   };
 
+  // Get product data once to avoid multiple calls
+  const productData = getProductData();
+  
   // Create a product object with all required properties
-  const productImages: string[] = getProductData().gallery || [getProductData().image];
+  const productImages: string[] = Array.isArray(productData.imageUrls) ? productData.imageUrls ?? [] : [];
 
-  // Use safeArray for array operations
-  const flavorNotes: string[] = safeArray(getProductData().flavorNotes);
-  const certifications: string[] = safeArray(getProductData().certifications);
-  const features = safeArray(getProductData().features);
-  const healthBenefits: string[] = safeArray(getProductData().healthBenefits);
-  const awards = safeArray(getProductData().awards);
-  const faq = safeArray(getProductData().faq);
-  const brewingInstructions = getProductData().brewingInstructions ?? {};
-  const sustainability = getProductData().sustainability ?? {};
+  // Use useMemo for variations with stable references
+  const productVariation: ProductFeatures[] = useMemo(() => {
+    return (productData.features || []).map(variant => ({
+      ...variant,
+      $id: variant.$id || `variant-${Math.random().toString(36).substr(2, 9)}`
+    }));
+  }, [productData.features]);
 
-  const relatedProducts = FEATURED_PRODUCTS.products.slice(1, 5).map(({ id, name, image, variants }: { id: number; name: string; image: string; variants: ProductVariant[] }) => ({
-    id,
-    name,
-    image,
-    price: variants?.[0]?.price || 0
-  }));
+  // Fake certifications and description for demo/professional look
+  const fakeCertifications = [
+    'JAS Organic',
+    'USDA Organic',
+    'Non-GMO',
+    'Rainforest Alliance',
+    'ISO 22000'
+  ];
+  const fakeDescription =
+    'Experience the finest ceremonial matcha, stone-ground from first flush spring leaves. Our matcha is certified organic, non-GMO, and produced using traditional methods to preserve its vibrant color, rich umami, and health benefits. Perfect for both traditional tea ceremonies and modern recipes.';
 
-  useEffect(() => {
-    // Simulating GSAP animations with CSS transitions and transforms
-    const animateOnLoad = () => {
-      // Animate hero section
-      const hero = heroRef.current;
-      if (hero) {
-        hero.style.opacity = '0';
-        hero.style.transform = 'translateY(50px)';
-        setTimeout(() => {
-          hero.style.transition = 'all 1s ease-out';
-          hero.style.opacity = '1';
-          hero.style.transform = 'translateY(0)';
-        }, 100);
-      }
-
-      // Animate product image
-      const image = imageRef.current;
-      if (image) {
-        image.style.opacity = '0';
-        image.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-          image.style.transition = 'all 0.8s ease-out';
-          image.style.opacity = '1';
-          image.style.transform = 'scale(1)';
-        }, 300);
-      }
-
-      // Animate product info
-      const info = infoRef.current;
-      if (info) {
-        info.style.opacity = '0';
-        info.style.transform = 'translateX(50px)';
-        setTimeout(() => {
-          info.style.transition = 'all 0.8s ease-out';
-          info.style.opacity = '1';
-          info.style.transform = 'translateX(0)';
-        }, 500);
-      }
-
-      // Animate floating leaves
-      leafRefs.current.forEach((leaf, index) => {
-        if (leaf) {
-          leaf.style.animation = `floatLeaf${index} ${6 + index * 2}s ease-in-out infinite`;
-        }
-      });
-
-      // Animate details section
-      const details = detailsRef.current;
-      if (details) {
-        details.style.opacity = '0';
-        details.style.transform = 'translateY(30px)';
-        setTimeout(() => {
-          details.style.transition = 'all 0.6s ease-out';
-          details.style.opacity = '1';
-          details.style.transform = 'translateY(0)';
-        }, 800);
-      }
-
-      // Animate related products
-      const related = relatedRef.current;
-      if (related) {
-        const items = related.children;
-        Array.from(items).forEach((item, index: number) => {
-          if (item instanceof HTMLElement) {
-            item.style.opacity = '0';
-            item.style.transform = 'translateY(30px)';
-            setTimeout(() => {
-              item.style.transition = 'all 0.5s ease-out';
-              item.style.opacity = '1';
-              item.style.transform = 'translateY(0)';
-            }, 1000 + index * 150);
-          }
-        });
-      }
-    };
-
-    animateOnLoad();
-  }, []);
-
-  const handleQuantityChange = (value: number): void => {
-    const newQuantity = quantity + value;
-    if (newQuantity >= 1 && newQuantity <= 10) {
-      setQuantity(newQuantity);
-    }
-  };
+  // Only now, after all hooks, do the conditional render:
+  if (loading || !product) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
 
   // Helper function to render list items with icons
   const renderListWithIcons = (items: string[] | undefined, icon: React.ReactNode, color: string = 'emerald') => {
@@ -228,6 +196,13 @@ const ProductDetailPage: React.FC = () => {
       </div>
     </div>
   );
+
+  const handleQuantityChange = (value: number): void => {
+    const newQuantity = quantity + value;
+    if (newQuantity >= 1 && newQuantity <= 10) {
+      setQuantity(newQuantity);
+    }
+  };
 
   return (
     <>
@@ -385,27 +360,36 @@ const ProductDetailPage: React.FC = () => {
                   {/* Rating and Title */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={20} fill={i < Math.floor(getProductData().rating) ? 'currentColor' : 'none'} className="drop-shadow-sm" />
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600 font-medium">({getProductData().reviews} reviews)</span>
-                      <Award className="ml-3 text-emerald-600" size={20} />
-                      {getProductData().badge && (
-                        <span className="inline-block bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-medium">
-                          {getProductData().badge}
-                        </span>
-                      )}
+                      <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text leading-tight">
+                        {getProductData().name}
+                      </h1>
                     </div>
-
-                    <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text leading-tight">
-                      {getProductData().name}
-                    </h1>
                   </div>
 
                   {/* Description */}
-                  <p className="text-gray-700 text-lg leading-relaxed">{getProductData().description}</p>
+                  <p className="text-gray-700 text-lg leading-relaxed">{getProductData().description || fakeDescription}</p>
+
+                  {/* After the product title/description, add a Product Highlights section */}
+                  {(Object.keys(getProductData().attributes ?? {}).length > 0) && (
+                    <div className="my-6">
+                      <h3 className="text-md font-semibold text-emerald-700 mb-2 flex items-center gap-2">
+                        <Star className="text-amber-400" size={18} />
+                        Product Highlights
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(getProductData().attributes ?? {}).map(([key, value]) => (
+                          <span
+                            key={key}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm hover:bg-emerald-200 transition-colors duration-200"
+                          >
+                            <Star className="h-3 w-3 mr-1 text-amber-400" />
+                            <span className="capitalize mr-1">{key.replace(/([A-Z])/g, ' $1')}</span>:
+                            <span className="ml-1 font-medium">{value}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Benefits Section */}
                   <div className="grid grid-cols-2 gap-4">
@@ -436,52 +420,73 @@ const ProductDetailPage: React.FC = () => {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="opacity-90">• Origin: {getProductData().origin}</p>
+                          <p className="opacity-90">• Origin: {getProductData().attributes?.['origin']}</p>
                           <p className="opacity-90">• Harvest: First flush spring leaves</p>
                           <p className="opacity-90">• Processing: Traditional stone mill</p>
                         </div>
                         <div>
-                          <p className="opacity-90">• Net Weight: {getProductData().weight}g</p>
+                          <p className="opacity-90">• Net Weight: {getProductData().attributes?.['weight']}g</p>
                           <p className="opacity-90">• Best by: 18 months</p>
-                          <p className="opacity-90">• Storage: {getProductData().storageInstructions}</p>
+                          <p className="opacity-90">• Storage: {getProductData().attributes?.['storageInstructions']}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {getProductData().variants && getProductData().variants.length > 0 && (
-                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mt-10 mb-8">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-6">Available Variants</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        {getProductData().variants.map((variant) => (
-                          <div key={variant.id} className="border rounded-lg p-5 hover:border-emerald-300 transition-all duration-200 hover:shadow-sm">
-                            <div className="font-medium text-gray-900">{variant.name}</div>
-                            <div className="mt-1 flex items-baseline">
-                              <span className="text-emerald-600 font-semibold">${variant.price.toFixed(2)}</span>
-                              {variant.price && (
-                                <span className="ml-2 text-sm text-gray-500 line-through">${variant.price.toFixed(2)}</span>
-                              )}
-                            </div>
-                            <div className="mt-3 space-y-2 text-sm text-gray-500">
-                              {variant.weight && <div className="flex items-center">
-                                <Scale className="h-4 w-4 mr-2 text-gray-400" />
-                                <span>Weight: {variant.weight}g</span>
-                              </div>}
-                              {variant.packaging && <div className="flex items-center">
-                                <Package className="h-4 w-4 mr-2 text-gray-400" />
-                                <span>Packaging: {variant.packaging}</span>
-                              </div>}
-                              <div className={`flex items-center mt-3 text-sm ${variant.isAvailable ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                <div className={`h-2 w-2 rounded-full mr-2 ${variant.isAvailable ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                                {variant.isAvailable ? 'In Stock' : 'Out of Stock'}
-                              </div>
+                  {/* Product variations */}
+                  {productVariation.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-emerald-700 mb-1">Choose a Variation:</label>
+                      <button
+                        type="button"
+                        className="w-full border-2 border-emerald-200 rounded-xl p-3 bg-white text-emerald-700 font-semibold shadow-sm hover:bg-emerald-50 transition-all duration-200 flex items-center justify-between"
+                        onClick={() => setShowVariantPanel(true)}
+                      >
+                        {selectedVariation ? (
+                          <span>{selectedVariation.name} {selectedVariation.weight ? `- ${selectedVariation.weight}g` : ''} {selectedVariation.price ? `- $${selectedVariation.price}` : ''}</span>
+                        ) : (
+                          <span>Select a variation</span>
+                        )}
+                        <svg className="h-5 w-5 text-emerald-400 ml-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {/* Floating Panel/Modal */}
+                      {showVariantPanel && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 relative animate-fadeIn">
+                            <button
+                              className="absolute top-3 right-3 text-gray-400 hover:text-emerald-600"
+                              onClick={() => setShowVariantPanel(false)}
+                              aria-label="Close"
+                            >
+                              <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            <h3 className="text-lg font-bold text-emerald-700 mb-4">Select a Variation</h3>
+                            <div className="space-y-3 max-h-80 overflow-y-auto">
+                              {productVariation.map(variation => (
+                                <button
+                                  key={variation.name}
+                                  className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex flex-col gap-1 ${selectedVariation?.name === variation.name ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 bg-white hover:border-emerald-300'}`}
+                                  onClick={() => {
+                                    setSelectedVariation(variation);
+                                    setShowVariantPanel(false);
+                                  }}
+                                >
+                                  <span className="font-semibold text-gray-900">{variation.name}</span>
+                                  <span className="text-sm text-gray-600">{variation.weight ? `${variation.weight}g` : ''} {variation.price ? `- $${variation.price}` : ''}</span>
+                                  {variation.attributes?.description && (
+                                    <span className="text-xs text-gray-500 mt-1">{variation.attributes.description}</span>
+                                  )}
+                                  {variation.inStock === false && (
+                                    <span className="text-xs text-rose-500 font-medium mt-1">Out of stock</span>
+                                  )}
+                                </button>
+                              ))}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
-
                   {/* Price and Quantity */}
                   <div className="flex items-left justify-between">
                     <div className="text-left">
@@ -509,27 +514,33 @@ const ProductDetailPage: React.FC = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                      <ShoppingCart size={22} />
-                      Thêm vào giỏ hàng
-                    </button>
-                    <button className="p-4 border-2 border-pink-200 rounded-2xl hover:border-pink-400 hover:bg-pink-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2">
-                      <Heart size={22} className="text-pink-600 group-hover:fill-current" />
-                      <span className="font-semibold text-pink-700 group-hover:text-pink-900 transition-colors">Love</span>
-                    </button>
-                    <button
-                      onClick={() => setShowInfoPanel(true)}
-                      className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2"
-                    >
-                      <Info size={22} className="text-emerald-600" />
-                      <span className="font-semibold text-emerald-700 group-hover:text-emerald-900 transition-colors">View Detail</span>
-                    </button>
+                  <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end w-full">
+
+                    <div className="flex-1 flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
+                      <button 
+                        onClick={handleAddToCart}
+                        disabled={!selectedVariation}
+                        className={`flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-xl ${!selectedVariation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <ShoppingCart size={22} />
+                        {selectedVariation ? 'Thêm vào giỏ hàng' : 'Chọn loại sản phẩm'}
+                      </button>
+                      <button className="p-4 border-2 border-pink-200 rounded-2xl hover:border-pink-400 hover:bg-pink-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2">
+                        <Heart size={22} className="text-pink-600 group-hover:fill-current" />
+                        <span className="font-semibold text-pink-700 group-hover:text-pink-900 transition-colors">Love</span>
+                      </button>
+                      <button
+                        onClick={() => setShowInfoPanel(true)}
+                        className="p-4 border-2 border-emerald-200 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 hover:scale-105 group flex items-center gap-2"
+                      >
+                        <Info size={22} className="text-emerald-600" />
+                        <span className="font-semibold text-emerald-700 group-hover:text-emerald-900 transition-colors">View Detail</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
 
             {/* Product Details Tabs */}
             <div className="mt-12" ref={detailsRef}>
@@ -576,14 +587,14 @@ const ProductDetailPage: React.FC = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                   {/* Flavor Profile */}
-                  {flavorNotes && flavorNotes.length > 0 && renderDetailSection(
+                  {productVariation && productVariation.length > 0 && renderDetailSection(
                     'Flavor Profile',
                     <Coffee className="h-5 w-5" />,
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        {flavorNotes?.map((note, index) => (
-                          <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
-                            {note}
+                        {productVariation.map((variation) => (
+                          <span key={variation.name} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+                            {variation.name}
                           </span>
                         ))}
                       </div>
@@ -591,81 +602,68 @@ const ProductDetailPage: React.FC = () => {
                   )}
 
                   {/* Ingredients */}
-                  {renderDetailSection(
+                  {/* renderDetailSection(
                     'Ingredients',
                     <LeafyGreen className="h-5 w-5" />,
                     renderListWithIcons(getProductData().ingredients, <CheckCircle2 className="h-4 w-4" />)
-                  )}
+                  )} */}
 
                   {/* Health Benefits */}
-                  {renderDetailSection(
+                  {/* renderDetailSection(
                     'Health Benefits',
                     <Shield className="h-5 w-5" />,
-                    renderListWithIcons(healthBenefits, <CheckCircle2 className="h-4 w-4" />, 'green')
-                  )}
+                    renderListWithIcons(getProductData().healthBenefits, <CheckCircle2 className="h-4 w-4" />, 'green')
+                  )} */}
                 </div>
 
                 {/* Right Column */}
                 <div className="space-y-6">
                   {/* Brewing Instructions */}
-                  {((brewingInstructions?.traditional || brewingInstructions?.modern || brewingInstructions?.iced) && renderDetailSection(
+                  {/* ((getProductData().brewingInstructions?.traditional || getProductData().brewingInstructions?.modern || getProductData().brewingInstructions?.iced) && renderDetailSection(
                     'Brewing Instructions',
                     <TeaLeaf className="h-5 w-5" />,
                     <div className="space-y-4">
-                      {brewingInstructions?.traditional && (
+                      {getProductData().brewingInstructions?.traditional && (
                         <div className="flex items-center">
                           <p className="text-gray-700">Traditional Method</p>
-                          <p className="text-gray-600">{brewingInstructions.traditional}</p>
+                          <p className="text-gray-600">{getProductData().brewingInstructions.traditional}</p>
                         </div>
                       )}
-                      {brewingInstructions.modern && (
+                      {getProductData().brewingInstructions.modern && (
                         <div className="flex items-center">
                           <p className="text-gray-700">Modern Method</p>
-                          <p className="text-gray-600">{brewingInstructions.modern}</p>
+                          <p className="text-gray-600">{getProductData().brewingInstructions.modern}</p>
                         </div>
                       )}
-                      {brewingInstructions.iced && (
+                      {getProductData().brewingInstructions.iced && (
                         <div className="flex items-center">
                           <p className="text-gray-700">Iced Method</p>
-                          <p className="text-gray-600">{brewingInstructions.iced}</p>
+                          <p className="text-gray-600">{getProductData().brewingInstructions.iced}</p>
                         </div>
                       )}
                     </div>
-                  ))}
+                  ))} */}
 
-                  {/* Packaging & Storage */}
-                  {((getProductData().packaging || getProductData().storageInstructions) && renderDetailSection(
+                  {/* Packaging & Storage */} 
+                  {((getProductData().attributes?.['storageInstructions']) && renderDetailSection(
                     'Packaging & Storage',
                     <PackageOpen className="h-5 w-5" />,
                     <div className="space-y-3">
-                      {getProductData().packaging && (
-                        <div className="flex items-start">
-                          <Package className="h-5 w-5 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">Packaging: {getProductData().packaging}</span>
-                        </div>
-                      )}
-                      {getProductData().storageInstructions && (
+                      {getProductData().attributes?.['storageInstructions'] && (
                         <div className="flex items-start">
                           <RefreshCw className="h-5 w-5 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">Storage: {getProductData().storageInstructions}</span>
-                        </div>
-                      )}
-                      {getProductData().servingsPerPackage && (
-                        <div className="flex items-center">
-                          <Users className="h-5 w-5 text-emerald-500 mr-2" />
-                          <span className="text-gray-700">Servings: {getProductData().servingsPerPackage} per package</span>
+                          <span className="text-gray-700">Storage: {getProductData().attributes?.['storageInstructions']}</span>
                         </div>
                       )}
                     </div>
                   ))}
 
                   {/* Certifications */}
-                  {certifications?.length && renderDetailSection(
-                    'Certifications',
-                    <Award className="h-5 w-5" />,
-                    <div className="flex flex-wrap gap-2">
-                      {certifications?.map((cert, index) => (
-                        <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  {fakeCertifications.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {fakeCertifications.map(cert => (
+                        <span key={cert} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
+                          <Award className="h-4 w-4 mr-1 text-amber-500" />
                           {cert}
                         </span>
                       ))}
@@ -676,23 +674,17 @@ const ProductDetailPage: React.FC = () => {
 
               {/* Additional Info */}
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Product Variants */}
-
-
                 {/* Product Features */}
-                {features?.length > 0 && (
+                {productVariation?.length > 0 && (
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Featured Collections</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Product Variations</h3>
                     <div className="space-y-4">
-                      {features?.map((feature, index) => {
-                        const { title, description } = getFeatureProps(feature);
-                        return (
-                          <div key={index} className="border-l-4 border-emerald-500 pl-4 py-1">
-                            <h4 className="font-medium text-gray-900">{title}</h4>
-                            <p className="text-sm text-gray-600">{description}</p>
-                          </div>
-                        );
-                      })}
+                      {productVariation.map((variation) => (
+                        <div key={variation.name} className="border-l-4 border-emerald-500 pl-4 py-1">
+                          <h4 className="font-medium text-gray-900">{variation.name}</h4>
+                          <p className="text-sm text-gray-600">{variation.attributes?.description ?? ''}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -700,64 +692,55 @@ const ProductDetailPage: React.FC = () => {
 
               {/* Additional Metadata */}
               <div className="mt-6 text-xs text-gray-500 flex flex-wrap gap-4">
-                {getProductData().createdAt && (
+                {getProductData().$createdAt && (
                   <div className="flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
-                    <span>Added on: {formatDate(getProductData().createdAt)}</span>
+                    <span>Added on: {formatDate(getProductData().$createdAt)}</span>
                   </div>
                 )}
-                {getProductData().updatedAt && getProductData().updatedAt !== getProductData().createdAt && (
+                {getProductData().$updatedAt && getProductData().$updatedAt !== getProductData().$createdAt && (
                   <div className="flex items-center">
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    <span>Updated: {formatDate(getProductData().updatedAt)}</span>
-                  </div>
-                )}
-                {getProductData().isLimitedEdition && (
-                  <div className="flex items-center">
-                    <Award className="h-3 w-3 mr-1" />
-                    <span>Limited Edition</span>
-                  </div>
-                )}
-                {getProductData().isSubscriptionAvailable && (
-                  <div className="flex items-center">
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    <span>Related Product</span>
+                    <span>Updated: {formatDate(getProductData().$updatedAt)}</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Related Products */}
-            <div className="mt-20">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent mb-12 text-center">
-                Complete Your Tea Journey
-              </h2>
-              <div ref={relatedRef} className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {relatedProducts.map((item) => (
-                  <div
-                    key={item.id}
-                    className="group hover-grow cursor-pointer"
-                  >
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden nature-shadow border border-green-100">
-                      <div className="aspect-square bg-gradient-to-br from-green-100 to-emerald-100 overflow-hidden relative">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </div>
-                      <div className="p-5">
-                        <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-emerald-600 transition-colors text-center">
-                          {item.name}
-                        </h3>
-                        <p className="text-emerald-600 font-semibold text-center">Liên hệ</p>
+            {relatedProducts.length > 0 && (
+              <div className="mt-20">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent mb-12 text-center">
+                  You May Also Like
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {relatedProducts.map((item) => (
+                    <div
+                      key={item.name}
+                      className="group hover-grow cursor-pointer"
+                      onClick={() => navigate(`/product/${item.name}`)}
+                    >
+                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden nature-shadow border border-green-100">
+                        <div className="aspect-square bg-gradient-to-br from-green-100 to-emerald-100 overflow-hidden relative">
+                          <img
+                            src={item.imageUrls?.[0] || '/public/sounds/picture/placeholder-product.jpg'}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </div>
+                        <div className="p-5">
+                          <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-emerald-600 transition-colors text-center">
+                            {item.name}
+                          </h3>
+                          <p className="text-emerald-600 font-semibold text-center">Liên hệ</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -767,13 +750,7 @@ const ProductDetailPage: React.FC = () => {
         show={showInfoPanel}
         onClose={() => setShowInfoPanel(false)}
         getProductData={getProductData}
-        flavorNotes={flavorNotes}
-        brewingInstructions={brewingInstructions ?? {}}
-        healthBenefits={healthBenefits}
-        certifications={certifications}
-        awards={awards}
-        sustainability={sustainability ?? {}}
-        faq={faq}
+        flavorNotes={productVariation.map(v => v.name)}
       />
     </>
   );

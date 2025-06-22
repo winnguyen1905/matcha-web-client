@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import {
   Box,
   Typography,
@@ -14,8 +14,9 @@ import {
   Button,
   TextField,
   InputAdornment,
+  Collapse,
 } from '@mui/material';
-import { Search, Edit, Delete, Add } from '@mui/icons-material';
+import { Search, Edit, Delete, Add, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useProducts } from '../../../context/Product';
 import type { Product } from '../../../context/Product';
 import { useNotification } from '../../../context/NotificationContext';
@@ -29,6 +30,7 @@ const ProductsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   const handleOpenDialog = (product: Product | null = null) => {
     setEditingProduct(product);
@@ -130,11 +132,14 @@ const ProductsPage: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Details</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Category</TableCell>
               <TableCell align="right">Price</TableCell>
               <TableCell align="right">Stock</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Featured</TableCell>
+              <TableCell>Published</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -142,41 +147,134 @@ const ProductsPage: React.FC = () => {
             {filteredProducts
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((product) => (
-                <TableRow key={product.$id}>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell align="right">${product.newPrice.toFixed(2)}</TableCell>
-                  <TableCell align="right">{product.stock}</TableCell>
-                  <TableCell>
-                    <Box
-                      component="span"
-                      sx={{
-                        p: 0.5,
-                        borderRadius: 1,
-                        backgroundColor: (() => {
-                          const status = getStatus(product.stock);
-                          return status === 'In Stock'
-                            ? 'success.light'
-                            : status === 'Low Stock'
-                            ? 'warning.light'
-                            : 'error.light';
-                        })(),
-                        color: 'white',
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {getStatus(product.stock)}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(product)}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(product.$id)}>
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+                <Fragment key={product.$id}>
+                  <TableRow>
+                    <TableCell>
+                      <IconButton
+                        aria-label="expand row"
+                        size="small"
+                        onClick={() => setExpandedProduct(expandedProduct === product.$id ? null : product.$id)}
+                      >
+                        {expandedProduct === product.$id ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </TableCell>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{product.category}</TableCell>
+                    <TableCell align="right">${product.newPrice.toFixed(2)}</TableCell>
+                    <TableCell align="right">{product.stock}</TableCell>
+                    <TableCell>
+                      <Box
+                        component="span"
+                        sx={{
+                          p: 0.5,
+                          borderRadius: 1,
+                          backgroundColor: (() => {
+                            const status = getStatus(product.stock);
+                            return status === 'In Stock'
+                              ? 'success.light'
+                              : status === 'Low Stock'
+                              ? 'warning.light'
+                              : 'error.light';
+                          })(),
+                          color: 'white',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        {getStatus(product.stock)}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box
+                        component="span"
+                        sx={{
+                          p: 0.5,
+                          borderRadius: 1,
+                          backgroundColor: product.isFeatured ? 'success.light' : 'grey.300',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        {product.isFeatured ? 'Yes' : 'No'}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box
+                        component="span"
+                        sx={{
+                          p: 0.5,
+                          borderRadius: 1,
+                          backgroundColor: product.isPublished ? 'success.light' : 'grey.300',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        {product.isPublished ? 'Yes' : 'No'}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton onClick={() => handleEdit(product)}>
+                        <Edit />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(product.$id)}>
+                        <Delete />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                      <Collapse in={expandedProduct === product.$id} timeout="auto" unmountOnExit>
+                        <Box sx={{ margin: 1 }}>
+                          <Typography variant="h6" gutterBottom component="div">
+                            Product Features
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            {product.features?.length ? (
+                              product.features.map((feature, idx) => (
+                                <Paper key={idx} sx={{ p: 2, minWidth: 250, flex: '1 1 300px' }}>
+                                  <Typography variant="subtitle1">{feature.name}</Typography>
+                                  <Box sx={{ mt: 1 }}>
+                                    <Box><strong>Price:</strong> ${feature.price.toFixed(2)}</Box>
+                                    <Box>
+                                      <strong>Status:</strong> {feature.inStock ? (
+                                        <Box component="span" sx={{ color: 'success.main' }}>In Stock</Box>
+                                      ) : (
+                                        <Box component="span" sx={{ color: 'error.main' }}>Out of Stock</Box>
+                                      )}
+                                    </Box>
+                                    {feature.weight && <Box><strong>Weight:</strong> {feature.weight}g</Box>}
+                                    {feature.dimensions && <Box><strong>Dimensions:</strong> {feature.dimensions}</Box>}
+                                    {feature.origin && <Box><strong>Origin:</strong> {feature.origin}</Box>}
+                                    {feature.material?.length > 0 && (
+                                      <Box>
+                                        <strong>Materials:</strong> {feature.material.join(', ')}
+                                      </Box>
+                                    )}
+                                    {feature.attributes && Object.entries(feature.attributes).length > 0 && (
+                                      <Box sx={{ mt: 1 }}>
+                                        <strong>Attributes:</strong>
+                                        <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
+                                          {Object.entries(feature.attributes).map(([key, value]) => (
+                                            <li key={key}>
+                                              <strong>{key}:</strong> {String(value)}
+                                            </li>
+                                          ))}
+                                        </Box>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                </Paper>
+                              ))
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No features available for this product.
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </Fragment>
               ))}
           </TableBody>
         </Table>

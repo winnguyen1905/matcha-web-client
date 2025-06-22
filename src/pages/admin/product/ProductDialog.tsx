@@ -24,7 +24,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { CloudUpload, Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
-import type { Product, ProductFeatures } from '../../../context/Product';
+import type { Product, ProductFeatures, ProductCategory } from '../../../context/Product';
 
 interface ProductDialogProps {
   open: boolean;
@@ -38,7 +38,7 @@ const initialFormState: Omit<Product, '$id'> = {
   description: '',
   oldPrice: 0,
   newPrice: 0,
-  category: '',
+  category: 'MATCHA',
   stock: 0,
   isFeatured: false,
   isPublished: false,
@@ -56,18 +56,13 @@ type FeatureFormState = Omit<ProductFeatures, 'attributes'> & { attributes: Cust
 const initialFeatureState: FeatureFormState = {
   name: '',
   price: 0,
+  inStock: false,
   weight: 0 as number,
   dimensions: '',
   material: [] as string[],
   origin: '',
   attributes: []
 };
-
-const categories = [
-  'SWEET',
-  'MATCHA',
-  'TOOL'
-];
 
 // Utility to normalize attributes to CustomAttribute[]
 function normalizeAttributes(attr: any): CustomAttribute[] {
@@ -77,6 +72,8 @@ function normalizeAttributes(attr: any): CustomAttribute[] {
   }
   return [];
 }
+
+const categoryOptions: ProductCategory[] = ['MATCHA', 'SWEET', 'TOOL'];
 
 const ProductDialog: React.FC<ProductDialogProps> = ({
   open,
@@ -226,6 +223,7 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
         const base = {
           name: f.name || '',
           price: f.price ?? 0,
+          inStock: f.inStock ?? false,
           weight: f.weight ?? 0,
           dimensions: f.dimensions || '',
           material: f.material || [],
@@ -239,7 +237,7 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
         description: formData.description || '',
         oldPrice: formData.oldPrice ?? 0,
         newPrice: formData.newPrice ?? 0,
-        category: formData.category || '',
+        category: (formData.category as ProductCategory) || 'MATCHA',
         stock: formData.stock ?? 0,
         isFeatured: formData.isFeatured ?? false,
         isPublished: formData.isPublished ?? false,
@@ -291,7 +289,7 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
     updatedAttributes[attrIndex] = { ...updatedAttributes[attrIndex], [field]: value };
     newFeatures[featureIndex] = {
       ...newFeatures[featureIndex],
-      attributes: updatedAttributes
+      attributes: updatedAttributes 
     };
     setFeatures(newFeatures);
   };
@@ -371,7 +369,7 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
                   label="Category"
                   onChange={handleInputChange}
                 >
-                  {categories.map((category) => (
+                  {categoryOptions.map((category) => (
                     <MenuItem key={category} value={category}>
                       {category}
                     </MenuItem>
@@ -722,6 +720,17 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
                       value={feature.origin || ''}
                       onChange={(e) => updateFeature(index, 'origin', e.target.value)}
                       margin="normal"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={feature.inStock ?? false}
+                          onChange={(e) => updateFeature(index, 'inStock', e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label="In Stock"
+                      sx={{ mt: 1, mb: 2 }}
                     />
 
                     <Box sx={{ mt: 3, mb: 2 }}>

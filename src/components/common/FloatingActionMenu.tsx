@@ -1,43 +1,66 @@
-import React, { useState } from 'react';
-import { MessageSquare, X } from 'lucide-react';
-import BackgroundMusic from './BackgroundMusic';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const FloatingActionMenu = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface FloatingCartButtonProps {
+  itemCount?: number;
+  className?: string;
+  onClick?: () => void;
+}
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+const FloatingCartButton = ({
+  itemCount = 0,
+  className = '',
+  onClick,
+}: FloatingCartButtonProps) => {
+  const hasItems = itemCount > 0;
+  const buttonSize = '3.5rem';
+  const badgeSize = '1.5rem';
 
   return (
-    <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end space-y-3">
-      {isOpen && (
-        <div className="flex flex-col items-center space-y-3">
-          <div className="relative group">
-            <BackgroundMusic />
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></div>
-          </div>
-          <a 
-            href="https://m.me/your-page" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-14 h-14 flex items-center justify-center bg-blue-500 rounded-full shadow-md text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
-            aria-label="Message us on Messenger"
-          >
-            <MessageSquare size={24} />
-          </a>
-        </div>
-      )}
-      
-      <button
-        onClick={toggleMenu}
-        className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-emerald-700 to-teal-800 rounded-full shadow-lg text-white hover:shadow-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-opacity-50"
-        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className={`fixed right-6 bottom-6 z-50 ${className}`}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      <Link
+        to="/cart"
+        onClick={onClick}
+        className={`relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg 
+          bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800
+          text-white transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2
+          focus:ring-offset-white dark:focus:ring-offset-gray-900 ${className}`}
+        style={{
+          '--button-size': buttonSize,
+          '--badge-size': badgeSize,
+        } as React.CSSProperties}
+        aria-label={`View cart${hasItems ? ` (${itemCount} items)` : ''}`}
       >
-        {isOpen ? <X size={28} /> : <span className="text-2xl font-bold">!</span>}
-      </button>
-    </div>
+        <ShoppingCart size={24} aria-hidden="true" />
+        
+        <AnimatePresence>
+          {hasItems && (
+            <motion.span
+              key="cart-badge"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold 
+                rounded-full w-6 h-6 flex items-center justify-center border-2 border-white
+                shadow-sm"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {itemCount > 9 ? '9+' : itemCount}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </Link>
+    </motion.div>
   );
 };
 
-export default FloatingActionMenu;
+export default FloatingCartButton;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, UserAccount, UpdateUserData } from '../../../context/Account';
+import { useAccount, UserAccount, UpdateUserData, Labels } from '../../../context/Account';
 import {
   Box,
   Typography,
@@ -158,9 +158,9 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, role: Labels) => {
     try {
-      await updateUserRole(userId, newRole);
+      await updateUserRole(userId, role);
       await loadUsers();
     } catch (error) {
       console.error('Failed to update user role:', error);
@@ -533,7 +533,7 @@ const UsersPage: React.FC = () => {
                 value={editFormData.labels?.[0] || 'CUSTOMER'}
                 onChange={(e) => setEditFormData({ 
                   ...editFormData, 
-                  labels: [e.target.value as string] 
+                  labels: [e.target.value as Labels] 
                 })}
                 label="Role"
               >
