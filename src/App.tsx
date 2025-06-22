@@ -9,11 +9,12 @@ import { ProductsProvider } from './context/Product';
 import AppRoutes from './routes';
 import { lightTheme } from './theme';
 import { NotificationProvider } from './context/NotificationContext';
+import { AccountProvider } from './context/Account';
 
 const AppContent = () => {
   return (
     <>
-    <AppRoutes />
+      <AppRoutes />
     </>
   );
 };
@@ -25,13 +26,15 @@ const App: React.FC = () => {
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <NotificationProvider>
           <AuthProvider>
-            <UserProvider>
-              <ProductsProvider>
-                <BrowserRouter>
-                  <AppContent />
-                </BrowserRouter>
-              </ProductsProvider>
-            </UserProvider>
+            <AccountProvider>
+              <UserProvider>
+                <ProductsProvider>
+                  <BrowserRouter>
+                    <AppContent />
+                  </BrowserRouter>
+                </ProductsProvider>
+              </UserProvider>
+            </AccountProvider>
           </AuthProvider>
         </NotificationProvider>
       </LocalizationProvider>

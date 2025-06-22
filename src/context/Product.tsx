@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ID, Query } from "appwrite";
 import { Client, Databases, Storage } from 'appwrite';
+import { databases, storage } from "../lib/appwrite";
 
 export const PRODUCTS_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || "";
 export const PRODUCTS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID || "products";
@@ -15,9 +16,6 @@ const client = new Client()
 if (PRODUCT_API_KEY) {
   client.headers['X-Appwrite-Key'] = PRODUCT_API_KEY;
 }
-
-const databases = new Databases(client);
-const storage = new Storage(client);
 
 // This function should be called when your app starts to ensure the collection is set up
 export const initializeProductsCollection = async () => {
@@ -70,7 +68,6 @@ export interface ProductFeatures {
 }
 
 export interface Product extends Omit<AppwriteDocument, 'features'> {
-
   name: string;
   description: string;
   oldPrice: number;
@@ -91,7 +88,6 @@ interface AppwriteDocument {
   $createdAt?: string;
   $updatedAt?: string;
   $permissions?: string[];
-
 }
 
 const parseProductFromResponse = (response: any): Product => {
