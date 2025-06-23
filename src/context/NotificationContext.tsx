@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useRef } from 'react';
 
 interface NotificationContextType {
   showNotification: (message: string, type?: NotificationType) => void;
@@ -11,6 +11,8 @@ interface Notification {
   open: boolean;
   message: string;
   type: NotificationType;
+  timestamp: number;
+  duration: number;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -58,22 +60,63 @@ const NotificationItem = ({ notification, onClose }: {
   };
 
   const getStyles = (type: NotificationType) => {
-    const baseStyles = "backdrop-blur-md border shadow-lg";
+    const baseStyles = "backdrop-blur-sm border-l-4 shadow-lg";
 
     switch (type) {
       case 'success':
-        return `${baseStyles} bg-emerald-500/20 border-emerald-500/30 text-emerald-500`;
+        return `${baseStyles} bg-emerald-50/90 dark:bg-emerald-900/30 border-emerald-500 text-emerald-800 dark:text-emerald-100`;
       case 'error':
-        return `${baseStyles} bg-red-500/20 border-red-500/30 text-red-500`;
+        return `${baseStyles} bg-red-50/90 dark:bg-red-900/30 border-red-500 text-red-800 dark:text-red-100`;
       case 'warning':
-        return `${baseStyles} bg-amber-500/20 border-amber-500/30 text-amber-500`;
+        return `${baseStyles} bg-amber-50/90 dark:bg-amber-900/30 border-amber-500 text-amber-800 dark:text-amber-100`;
       case 'info':
       default:
-        return `${baseStyles} bg-blue-500/20 border-blue-500/30 text-blue-500`;
+        return `${baseStyles} bg-blue-50/90 dark:bg-blue-900/30 border-blue-500 text-blue-800 dark:text-blue-100`;
     }
   };
 
+  const [timeLeft, setTimeLeft] = useState(5);
+  const timerRef = useRef<NodeJS.Timeout>();
+  
+  // Calculate LED color based on time left (green -> yellow -> red)
+  const getLedColor = (time: number) => {
+    if (time > 3) return 'text-green-500';
+    if (time > 1) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+  
+  // Add blinking effect for last second
+  const getLedClass = (time: number) => {
+    const baseClass = 'font-mono font-bold tracking-wider';
+    const colorClass = getLedColor(time);
+    const blinkClass = time <= 2 ? 'animate-pulse' : '';
+    return `${baseClass} ${colorClass} ${blinkClass}`;
+  };
+
+  useEffect(() => {
+    if (isVisible) {
+      const endTime = notification.timestamp + notification.duration;
+      
+      const updateTimer = () => {
+        const now = Date.now();
+        const remaining = Math.ceil((endTime - now) / 1000);
+        setTimeLeft(Math.max(0, remaining));
+        
+        if (now < endTime) {
+          timerRef.current = setTimeout(updateTimer, 200);
+        }
+      };
+      
+      updateTimer();
+      
+      return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
+    }
+  }, [isVisible, notification.timestamp, notification.duration]);
+
   const handleClose = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     setIsVisible(false);
     setTimeout(() => onClose(notification.id), 300);
   };
@@ -82,36 +125,31 @@ const NotificationItem = ({ notification, onClose }: {
     <div
       className={`
         notification-item
-        relative overflow-hidden rounded-xl p-4 mb-3 min-w-80 max-w-md
+        relative overflow-hidden rounded-r-lg p-4 mb-3 w-full max-w-sm
         transform transition-all duration-300 ease-out
         ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
         ${getStyles(notification.type)}
-        hover:scale-105 hover:shadow-xl
-        group cursor-pointer
-        shadow-2xl
+        hover:shadow-lg group cursor-pointer
+        shadow-md
       `}
       style={{
         zIndex: 9999,
         position: 'relative',
-        transform: 'translateZ(9999px)',
         willChange: 'transform, opacity'
       }}
       onClick={handleClose}
     >
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
       <div className="relative flex items-start space-x-3">
-        {/* Icon with pulse animation */}
+        {/* Icon */}
         <div className="flex-shrink-0 mt-0.5">
-          <div className="p-1 rounded-full bg-current/10 animate-pulse">
+          <div className="p-1.5 rounded-full bg-white/50 dark:bg-black/20 backdrop-blur-sm">
             {getIcon(notification.type)}
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium leading-relaxed">
+          <p className="text-sm font-medium leading-tight">
             {notification.message}
           </p>
         </div>
@@ -122,22 +160,33 @@ const NotificationItem = ({ notification, onClose }: {
             e.stopPropagation();
             handleClose();
           }}
-          className="flex-shrink-0 rounded-full p-1 hover:bg-current/10 transition-colors duration-200 opacity-60 hover:opacity-100"
+          className="flex-shrink-0 rounded-full p-1 -mr-1 hover:bg-black/5 dark:hover:bg-white/10 
+                    transition-colors duration-150 opacity-70 hover:opacity-100"
+          aria-label="Close notification"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-current/20 overflow-hidden">
-        <div
-          className="h-full bg-current animate-progress"
-          style={{
-            animation: 'progress 5s linear forwards'
-          }}
-        />
+      {/* Progress bar with timer */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/5 dark:bg-white/10 overflow-hidden">
+        <div className="flex items-center h-full">
+          <div 
+            className="h-full bg-current/80 animate-progress"
+            style={{
+              animation: 'progress 5s linear forwards'
+            }}
+          />
+          <div className="relative flex items-center justify-center w-12 h-5 ml-1 rounded bg-black/20 dark:bg-white/10">
+            <span className={`absolute inset-0 rounded opacity-20 ${getLedColor(timeLeft).replace('text-', 'bg-')}`}></span>
+            <span className={getLedClass(timeLeft)}>
+              {timeLeft}
+              <span className="text-[8px] ml-0.5">s</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -146,13 +195,16 @@ const NotificationItem = ({ notification, onClose }: {
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const showNotification = (message: string, type: NotificationType = 'info') => {
+  const showNotification = (message: string, type: NotificationType = 'info', customDuration?: number) => {
     const id = Math.random().toString(36).substr(2, 9);
+    const duration = customDuration || 5000; // 5 seconds default
     const newNotification: Notification = {
       id,
       open: true,
       message,
       type,
+      timestamp: Date.now(),
+      duration,
     };
 
     setNotifications(prev => [...prev, newNotification]);
@@ -172,7 +224,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       {children}
 
       {/* Notification Container - Highest z-index to ensure it's always on top */}
-      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+      <div className="fixed top-4 right-4 z-[9999] space-y-3 w-full max-w-sm px-4 sm:px-0">
         {/* Global styles for notification container */}
         <style dangerouslySetInnerHTML={{
           __html: `
@@ -204,12 +256,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       {/* Custom CSS for animations */}
       <style>{`
         @keyframes progress {
-          from { width: 100%; }
-          to { width: 0%; }
+          from { width: 100%; opacity: 1; }
+          to { width: 0%; opacity: 0.7; }
         }
         
         .animate-progress {
           animation: progress 5s linear forwards;
+          transform-origin: left;
+        }
+        
+        .notification-item {
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
         }
       `}</style>
     </NotificationContext.Provider>

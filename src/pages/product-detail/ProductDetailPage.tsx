@@ -31,6 +31,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Product, ProductFeatures, useProducts } from '../../context/Product';
 import { addItem, prepareProductForCart } from '../../context/Cart';
 import { useAppDispatch } from '../../app/hooks';
+import { useNotification } from '../../context/NotificationContext';
 
 const ProductDetailPage: React.FC = () => {
   // Get the optional `id` route param as a string
@@ -54,31 +55,33 @@ const ProductDetailPage: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const dispatch = useAppDispatch();
 
+  const { showNotification } = useNotification();
+
   const handleAddToCart = (): void => {
     if (!selectedVariation || !product) {
-      alert('Vui lòng chọn loại sản phẩm trước khi thêm vào giỏ hàng');
+      showNotification('Vui lòng chọn loại sản phẩm trước khi thêm vào giỏ hàng', 'warning');
       return;
     }
 
     try {
       // Prepare cart item using the utility function
       const cartItem = prepareProductForCart(product, selectedVariation, quantity);
-      
+
       // Dispatch add to cart action
       dispatch(addItem({
         product: cartItem.product,
         variation: cartItem.variation,
         quantity: cartItem.quantity
       }));
-      
+
       // Show success message
-      alert(`Đã thêm ${quantity} ${selectedVariation.name} vào giỏ hàng!`);
-      
+      showNotification(`Đã thêm ${quantity} [${selectedVariation.name}] vào giỏ hàng!`, 'success');
+
       // Reset quantity
       setQuantity(1);
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.');
+      showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -138,7 +141,7 @@ const ProductDetailPage: React.FC = () => {
 
   // Get product data once to avoid multiple calls
   const productData = getProductData();
-  
+
   // Create a product object with all required properties
   const productImages: string[] = Array.isArray(productData.imageUrls) ? productData.imageUrls ?? [] : [];
 
@@ -517,7 +520,7 @@ const ProductDetailPage: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end w-full">
 
                     <div className="flex-1 flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
-                      <button 
+                      <button
                         onClick={handleAddToCart}
                         disabled={!selectedVariation}
                         className={`flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-xl ${!selectedVariation ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -644,7 +647,7 @@ const ProductDetailPage: React.FC = () => {
                     </div>
                   ))} */}
 
-                  {/* Packaging & Storage */} 
+                  {/* Packaging & Storage */}
                   {((getProductData().attributes?.['storageInstructions']) && renderDetailSection(
                     'Packaging & Storage',
                     <PackageOpen className="h-5 w-5" />,

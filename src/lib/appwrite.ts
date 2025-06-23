@@ -29,7 +29,7 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
-// Database and Collection IDs
+// Database ID
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
 
 export const COLLECTIONS = {

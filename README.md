@@ -69,7 +69,13 @@ Before you begin, ensure you have the following installed:
     VITE_APPWRITE_ENDPOINT=YOUR_APPWRITE_ENDPOINT # e.g., [https://cloud.appwrite.io/v1](https://cloud.appwrite.io/v1) or your self-hosted URL
     # Add any other Appwrite-related environment variables here (e.g., specific collection IDs if hardcoded)
     ```
-
+5. **Run the setup script to create collections and indexes:**
+    ```bash
+    npm run setup:db
+    # or
+    yarn setup:db
+    ```
+    
 ### Local Development
 
 1.  **Clone the repository:**
