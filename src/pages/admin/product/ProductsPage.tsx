@@ -17,8 +17,8 @@ import {
   Collapse,
 } from '@mui/material';
 import { Search, Edit, Delete, Add, ExpandMore, ExpandLess } from '@mui/icons-material';
-import { useProducts } from '../../../context/Product';
-import type { Product } from '../../../context/Product';
+import { useProducts } from '../../../hooks/Product';
+import type { Product } from '../../../hooks/Product';
 import { useNotification } from '../../../context/NotificationContext';
 import ProductDialog from './ProductDialog';
 

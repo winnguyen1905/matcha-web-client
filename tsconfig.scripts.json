@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "outDir": "./dist/scripts",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["node"]
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

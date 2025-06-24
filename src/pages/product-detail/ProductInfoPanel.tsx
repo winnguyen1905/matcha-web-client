@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { X, Award, Leaf, Package, Globe, Users } from 'lucide-react';
 import { gsap } from 'gsap';
-import { Product } from '../../context/Product';
+import { Product } from '../../hooks/Product';
 
 interface ProductInfoPanelProps {
   show: boolean;

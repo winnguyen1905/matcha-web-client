@@ -99,6 +99,7 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
     { text: 'Products', icon: <ShoppingCartOutlined />, path: '/admin/products' },
     { text: 'Users', icon: <PeopleOutline />, path: '/admin/users' },
     { text: 'Orders', icon: <ShoppingCartOutlined />, path: '/admin/orders' },
+    { text: 'Discounts', icon: <ShoppingCartOutlined />, path: '/admin/discounts' },
     { text: 'Notifications', icon: <NotificationsOutlined />, path: '/admin/notifications' },
     { text: 'Settings', icon: <SettingsOutlined />, path: '/admin/settings' }
   ];

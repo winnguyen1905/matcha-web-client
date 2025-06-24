@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAccount } from '../../context/Account';
+import { useAccount } from '../../hooks/Account';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();

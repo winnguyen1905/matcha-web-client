@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Star, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useProducts } from '../../context/Product';
+import { useProducts } from '../../hooks/Product';
 import { FEATURED_PRODUCTS } from '../../constants';
 import TeaLeafCursor from './TeaLeafCursor';
 import MatchaSearchFilter from '../../components/MatchaSearchFilter';
-import type { ProductCategory } from '../../context/Product';
+import type { ProductCategory } from '../../hooks/Product';
 
 const ITEMS_PER_PAGE = 12;
 

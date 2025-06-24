@@ -28,8 +28,8 @@ import {
 import { FEATURED_PRODUCTS } from '../../constants';
 import ProductInfoPanel from './ProductInfoPanel';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Product, ProductFeatures, useProducts } from '../../context/Product';
-import { addItem, prepareProductForCart } from '../../context/Cart';
+import { Product, ProductFeatures, useProducts } from '../../hooks/Product';
+import { addItem, prepareProductForCart } from '../../hooks/Cart';
 import { useAppDispatch } from '../../app/hooks';
 import { useNotification } from '../../context/NotificationContext';
 

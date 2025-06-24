@@ -1,0 +1,10 @@
+export const COLLECTIONS_SEED = {
+  ACCOUNTS: process.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || 'accounts',
+  TAX_RATES: process.env.VITE_APPWRITE_TAX_RATES_COLLECTION_ID || 'tax_rates',
+  ORDERS: process.env.VITE_APPWRITE_ORDERS_COLLECTION_ID || 'orders',
+  ORDER_ITEMS: process.env.VITE_APPWRITE_ORDER_ITEMS_COLLECTION_ID || 'order_items',
+  DISCOUNTS: process.env.VITE_APPWRITE_DISCOUNTS_COLLECTION_ID || 'discounts',
+  DISCOUNT_USAGE: process.env.VITE_APPWRITE_DISCOUNT_USAGE_COLLECTION_ID || 'discount_usage',
+  USER_DISCOUNTS: process.env.VITE_APPWRITE_USER_DISCOUNTS_COLLECTION_ID || 'user_discounts',
+  PRODUCTS: process.env.VITE_APPWRITE_PRODUCTS_COLLECTION_ID || 'products',
+} as const;

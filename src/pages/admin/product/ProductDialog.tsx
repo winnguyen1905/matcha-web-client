@@ -24,7 +24,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { CloudUpload, Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
-import type { Product, ProductFeatures, ProductCategory } from '../../../context/Product';
+import type { Product, ProductFeatures, ProductCategory } from '../../../hooks/Product';
 
 interface ProductDialogProps {
   open: boolean;

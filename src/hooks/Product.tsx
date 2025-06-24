@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ID, Query } from "appwrite";
-import { Client, Databases, Storage } from 'appwrite';
+import { Client } from 'appwrite';
 import { databases, storage } from "../lib/appwrite";
 
 export const PRODUCTS_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || "";
-export const PRODUCTS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID || "products";
-export const PRODUCT_IMAGES_BUCKET_ID = import.meta.env.VITE_APPWRITE_BUCKET_ID || "product_images";
+export const PRODUCTS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_PRODUCTS_COLLECTION_ID || "products";
+export const PRODUCT_IMAGES_BUCKET_ID = import.meta.env.VITE_APPWRITE_PRODUCT_BUCKET_ID || "product_images";
 export const PRODUCT_API_KEY = import.meta.env.VITE_APPWRITE_API_KEY || "";
 
 // Initialize Appwrite client

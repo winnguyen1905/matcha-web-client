@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { removeItem, updateQuantity, selectCartItems, selectCartTotal, selectCartItemCount } from '../../context/Cart';
+import { removeItem, updateQuantity, selectCartItems, selectCartTotal, selectCartItemCount } from '../../hooks/Cart';
 import { Link } from 'react-router-dom';
 import { FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
 

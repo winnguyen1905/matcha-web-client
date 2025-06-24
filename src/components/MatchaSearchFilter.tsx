@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, ChevronDown, X, Leaf } from 'lucide-react';
-import { ProductCategory } from '../context/Product';
+import { ProductCategory } from '../hooks/Product';
 
 interface MatchaSearchFilterProps {
   searchQuery: string;

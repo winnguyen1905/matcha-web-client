@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, UserAccount, UpdateUserData, Labels } from '../../../context/Account';
+import { useAccount, UserAccount, UpdateUserData, Labels } from '../../../hooks/Account';
 import {
   Box,
   Typography,

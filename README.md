@@ -76,6 +76,13 @@ Before you begin, ensure you have the following installed:
     yarn setup:db
     ```
     
+6. **Seed initial discount data:**
+    ```bash
+    npm run seed:discounts
+    # or
+    yarn seed:discounts
+    ```
+    
 ### Local Development
 
 1.  **Clone the repository:**
