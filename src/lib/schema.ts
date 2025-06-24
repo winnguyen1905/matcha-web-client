@@ -2,7 +2,7 @@ import { Models } from 'appwrite';
 
 // Base interface for all documents
 interface BaseDocument extends Partial<Models.Document> {
-  $id?: string;
+  $id: string;
   $createdAt?: string;
   $updatedAt?: string;
   $permissions?: string[];
@@ -11,7 +11,7 @@ interface BaseDocument extends Partial<Models.Document> {
 }
 
 // Tax Rate Interface
-export interface TaxRate extends BaseDocument {
+export interface TaxRate extends Partial<BaseDocument> {
   name: string;
   rate: number; // Stored as decimal (e.g., 0.1 for 10%)
   country?: string;
@@ -24,7 +24,7 @@ export interface TaxRate extends BaseDocument {
 }
 
 // Order Item Interface
-export interface OrderItem extends BaseDocument {
+export interface OrderItem extends Partial<BaseDocument> {
   orderId: string;
   productId: string;
   productVariantId: string;
@@ -211,7 +211,7 @@ export type CreateOrderItem = Omit<OrderItem, keyof BaseDocument>;
 export type UpdateOrderItem = Partial<CreateOrderItem>;
 
 export type CreateDiscount = Omit<Discount, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
-export type UpdateDiscount = Partial<CreateDiscount>;
+export type UpdateDiscount = Omit<Discount, '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
 
 export type CreateDiscountUsage = Omit<DiscountUsage, keyof BaseDocument>;
 export type UpdateDiscountUsage = Partial<CreateDiscountUsage>;

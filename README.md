@@ -82,7 +82,7 @@ Before you begin, ensure you have the following installed:
     # or
     yarn seed:discounts
     ```
-    
+
 ### Local Development
 
 1.  **Clone the repository:**
@@ -113,3 +113,10 @@ Before you begin, ensure you have the following installed:
 ---
 
 ## Project Structure
+
+
+
+
+
+
+using Taxjar for tax calculation 

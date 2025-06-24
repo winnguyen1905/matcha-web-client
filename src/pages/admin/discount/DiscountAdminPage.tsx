@@ -222,7 +222,7 @@ const DiscountAdminPage: React.FC = () => {
                 <StripedRow key={discount.$id}>
                   <TableCell>{discount.code}</TableCell>
 
-                  <TableCell sx={{ maxWidth: 200 }} title={discount.description}>
+                  <TableCell sx={{ maxWidth: 100 }} title={discount.description}>
                     {discount.description}
                   </TableCell>
 
