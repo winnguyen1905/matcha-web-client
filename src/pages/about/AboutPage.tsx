@@ -3,7 +3,7 @@ import About from '../../components/features/About';
 
 const AboutPage: React.FC = () => {
   return (
-    <div className="pt-24">
+    <div>
       <About />
     </div>
   );

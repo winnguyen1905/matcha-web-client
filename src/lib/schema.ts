@@ -11,7 +11,7 @@ interface BaseDocument extends Partial<Models.Document> {
 }
 
 // Tax Rate Interface
-export interface TaxRate extends Partial<BaseDocument> {
+export interface TaxRate extends BaseDocument {
   name: string;
   rate: number; // Stored as decimal (e.g., 0.1 for 10%)
   country?: string;
@@ -24,7 +24,7 @@ export interface TaxRate extends Partial<BaseDocument> {
 }
 
 // Order Item Interface
-export interface OrderItem extends Partial<BaseDocument> {
+export interface OrderItem extends BaseDocument {
   orderId: string;
   productId: string;
   productVariantId: string;
@@ -40,7 +40,7 @@ export interface ShippingAddress {
   phone: string;
   address: string;
   city: string;
-  state?: string;
+  state: string;
   country: string;
   postalCode: string;
 }
@@ -201,13 +201,13 @@ export const isValidDiscountUsageStatus = (status: string): status is DiscountUs
 };
 
 // Utility types for creating/updating documents
-export type CreateTaxRate = Omit<TaxRate, keyof BaseDocument>;
+export type CreateTaxRate = Omit<TaxRate, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
 export type UpdateTaxRate = Partial<CreateTaxRate>;
 
-export type CreateOrder = Omit<Order, keyof BaseDocument>;
+export type CreateOrder = Omit<Order, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
 export type UpdateOrder = Partial<CreateOrder>;
 
-export type CreateOrderItem = Omit<OrderItem, keyof BaseDocument>;
+export type CreateOrderItem = Omit<OrderItem, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
 export type UpdateOrderItem = Partial<CreateOrderItem>;
 
 export type CreateDiscount = Omit<Discount, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;

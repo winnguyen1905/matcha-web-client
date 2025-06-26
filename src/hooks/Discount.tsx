@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { ID, Query, type Models } from "appwrite";
 import { databases } from "../lib/appwrite";
 import {
@@ -457,7 +457,7 @@ export function DiscountsProvider({ children }: { children: React.ReactNode }) {
   // For full reference include the rest of original functions, ensuring numeric coercion where relevant.
   // ------------------------
 
-  const value: DiscountContextType = {
+  const value: DiscountContextType = useMemo(() => ({
     discounts,
     discountUsages,
     userDiscounts,
@@ -492,7 +492,7 @@ export function DiscountsProvider({ children }: { children: React.ReactNode }) {
     cleanupExpiredDiscounts: async () => 0,
     cleanupFailedUsages: async () => 0,
     init,
-  };
+  }), [discounts, discountUsages, userDiscounts, loading, error]);
 
   return <DiscountContext.Provider value={value}>{children}</DiscountContext.Provider>;
 }

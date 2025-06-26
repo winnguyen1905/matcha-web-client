@@ -16,7 +16,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading) {  
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <CircularProgress />

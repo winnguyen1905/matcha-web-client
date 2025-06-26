@@ -12,7 +12,6 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks';
 
 import { useDiscounts } from '@/hooks/Discount';
 import type { DiscountCalculationResult } from '@/hooks/Discount';
-import { Discount } from '@/lib/schema';
 import DiscountInfo from './DiscountInfo';
 
 
@@ -128,7 +127,7 @@ const CartPage: React.FC = () => {
   /*  Main cart view                                                    */
   /* ------------------------------------------------------------------ */
   return (
-    <div className="container mx-auto px-4 py-8 pt-32 min-h-screen">
+    <div className="container mx-auto px-4 py-8 min-h-screen">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-green-600 dark:text-green-400">Your Cart</h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">

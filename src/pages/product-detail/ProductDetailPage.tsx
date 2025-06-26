@@ -259,7 +259,7 @@ const ProductDetailPage: React.FC = () => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 leaf-pattern relative overflow-hidden pt-24">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 leaf-pattern relative overflow-hidden">
         {/* Floating Decorative Elements */}
         <div className="absolute inset-0 pointer-events-none">
           <Leaf

@@ -1,6 +1,7 @@
 import { Box, styled } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import { drawerWidth, collapsedWidth } from './AdminSidebar';
+import Breadcrumb from '../../common/Breadcrumb';
 
 interface AdminMainContentProps {
   isCollapsed: boolean;
@@ -25,7 +26,13 @@ export const AdminMainContent = ({ isCollapsed }: AdminMainContentProps) => {
     <Main>
       <Box component="div" sx={{ height: '64px' }} /> {/* Toolbar spacer */}
       <Box sx={{ width: '100%', p: 3 }}>
-        <Outlet />
+        {/* Breadcrumb Navigation */}
+        <Box sx={{ mb: 2, mt: 1 }}>
+          <Breadcrumb variant="admin" />
+        </Box>
+        <Box>
+          <Outlet />
+        </Box>
       </Box>
     </Main>
   );

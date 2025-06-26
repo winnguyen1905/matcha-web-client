@@ -9,6 +9,7 @@ import { AdminMainContent } from './admin/AdminMainContent';
 import { ThemeProvider } from '@mui/material/styles';
 import { ThemeModeProvider, useThemeMode } from '../../context/ThemeModeContext';
 import { getTheme } from '../../theme';
+import { AdminProviders } from '../providers/AdminProviders';
 
 const AdminLayoutContent: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -37,23 +38,25 @@ const AdminLayoutContent: React.FC = () => {
 
   return (
     <ThemeProvider theme={getTheme(mode)}>
-      <Box sx={{ display: 'flex' }}>
-        <CssBaseline />
-        <AdminHeader 
-          onMenuClick={handleDrawerToggle} 
-          user={user} 
-          isCollapsed={isCollapsed}
-          onCollapse={handleSidebarCollapse}
-        />
-        <AdminSidebar 
-          mobileOpen={mobileOpen} 
-          onClose={handleDrawerToggle} 
-          onLogout={handleLogout} 
-          isCollapsed={isCollapsed}
-          onCollapse={handleSidebarCollapse}
-        />
-        <AdminMainContent isCollapsed={isCollapsed} />
-      </Box>
+      <AdminProviders>
+        <Box sx={{ display: 'flex' }}>
+          <CssBaseline />
+          <AdminHeader 
+            onMenuClick={handleDrawerToggle} 
+            user={user} 
+            isCollapsed={isCollapsed}
+            onCollapse={handleSidebarCollapse}
+          />
+          <AdminSidebar 
+            mobileOpen={mobileOpen} 
+            onClose={handleDrawerToggle} 
+            onLogout={handleLogout} 
+            isCollapsed={isCollapsed}
+            onCollapse={handleSidebarCollapse}
+          />
+          <AdminMainContent isCollapsed={isCollapsed} />
+        </Box>
+      </AdminProviders>
     </ThemeProvider>
   );
 };

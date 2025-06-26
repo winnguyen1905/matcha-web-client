@@ -25,7 +25,9 @@ import {
   ChevronLeft,
   ChevronRight,
   NotificationsOutlined,
-  SettingsOutlined
+  SettingsOutlined,
+  Assignment as OrderIcon,
+  LocalOffer as DiscountIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { gsap } from 'gsap';
@@ -98,8 +100,8 @@ export const AdminSidebar = ({ mobileOpen, onClose, onLogout, isCollapsed, onCol
     { text: 'Dashboard', icon: <DashboardOutlined />, path: '/admin' },
     { text: 'Products', icon: <ShoppingCartOutlined />, path: '/admin/products' },
     { text: 'Users', icon: <PeopleOutline />, path: '/admin/users' },
-    { text: 'Orders', icon: <ShoppingCartOutlined />, path: '/admin/orders' },
-    { text: 'Discounts', icon: <ShoppingCartOutlined />, path: '/admin/discounts' },
+    { text: 'Orders', icon: <OrderIcon />, path: '/admin/orders' },
+    { text: 'Discounts', icon: <DiscountIcon />, path: '/admin/discounts' },
     { text: 'Notifications', icon: <NotificationsOutlined />, path: '/admin/notifications' },
     { text: 'Settings', icon: <SettingsOutlined />, path: '/admin/settings' }
   ];

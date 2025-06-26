@@ -125,7 +125,7 @@ const ProductPage: React.FC = () => {
   }, [filteredProducts, page]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 pt-24 relative">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative">
       {/* Tea Leaf Cursor Animation */}
       <TeaLeafCursor />
 

@@ -3,7 +3,7 @@ import FeaturedProducts from '../../components/features/FeaturedProducts';
 
 const ProductsPage: React.FC = () => {
   return (
-    <div className="pt-24">
+    <div>
       <FeaturedProducts />
     </div>
   );
