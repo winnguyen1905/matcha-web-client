@@ -32,7 +32,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { useThemeMode } from '../../../context/ThemeModeContext';
-import { useUser } from '../../../hooks/useUser';
+import { useUser } from '../../../hooks/useAccount';
 
 const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 180;

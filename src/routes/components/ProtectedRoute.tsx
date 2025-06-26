@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../../hooks/useAuth';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useAccount';
 import LoadingSpinner from './LoadingSpinner';
 
 const ProtectedRoute: React.FC<{ element: React.ReactElement; roles?: string[] }> = ({

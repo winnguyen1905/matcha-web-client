@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useAccount';
 import { Box, CssBaseline } from '@mui/material';
 import { AdminHeader } from './admin/AdminHeader';
 import { AdminSidebar, drawerWidth, collapsedWidth } from './admin/AdminSidebar';

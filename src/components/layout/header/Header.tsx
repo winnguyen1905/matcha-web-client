@@ -6,7 +6,7 @@ import DesktopNav from './DesktopNav';
 import MobileMenuButton from './MobileMenuButton';
 import MobileNav from './MobileNav';
 import { useDesktopNavGsap, useMobileNavGsap } from '../../../hooks/useHeaderGsap';
-import { useUser } from '../../../hooks/useUser';
+import { useUser } from '../../../hooks/useAccount';
 import { useAuth } from '../../../hooks/useAuth';
 
 const Header = () => {

@@ -6,7 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./app/store";
 import { AuthProvider } from "./hooks/useAuth";
-import { UserProvider } from "./hooks/useUser";
+import { UserProvider } from "./hooks/useAccount";
 import { ProductsProvider } from "./hooks/Product";
 import { OrdersProvider } from "./hooks/Order";
 import { TaxProvider } from "./hooks/Tax";

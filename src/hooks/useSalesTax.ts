@@ -37,7 +37,7 @@ export function useSalesTax({ zip, state, amount, shipping = 0 }: Params) {
         );
 
         // wait for the function to finish (simple polling)
-        let result = execution;
+        let result: any = execution;
         while (result.status === 'processing') {
           await new Promise(r => setTimeout(r, 750));
           result = await functions.getExecution(result.$id, import.meta.env.VITE_TAX_FN_ID);

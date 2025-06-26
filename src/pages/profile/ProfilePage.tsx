@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../../hooks/useUser';
+import { useUser } from '../../hooks/useAccount';
 import { Button, Container, Typography, Box, Paper, Divider, CircularProgress } from '@mui/material';
 
 const ProfilePage: React.FC = () => {

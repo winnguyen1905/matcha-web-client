@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
 import {
   selectCartItems,
@@ -18,6 +18,11 @@ import DiscountInfo from './DiscountInfo';
 
 
 const CartPage: React.FC = () => {
+  /* ------------------------------------------------------------------ */
+  /*  Navigation                                                        */
+  /* ------------------------------------------------------------------ */
+  const navigate = useNavigate();
+
   /* ------------------------------------------------------------------ */
   /*  Redux cart                                                        */
   /* ------------------------------------------------------------------ */
@@ -332,7 +337,7 @@ const CartPage: React.FC = () => {
             <button
               className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-60"
               disabled={items.length === 0}
-              onClick={() => { }}
+              onClick={() => navigate('/checkout')}
             >
               Proceed to Checkout
             </button>
