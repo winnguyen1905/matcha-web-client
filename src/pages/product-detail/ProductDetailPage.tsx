@@ -166,7 +166,62 @@ const ProductDetailPage: React.FC = () => {
 
   // Only now, after all hooks, do the conditional render:
   if (loading || !product) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-emerald-100">
+          <div className="flex flex-col items-center justify-center">
+            <style>{`
+              @keyframes matcha-spin {
+                0% { transform: rotate(0deg) scale(1); }
+                50% { transform: rotate(180deg) scale(1.1); }
+                100% { transform: rotate(360deg) scale(1); }
+              }
+              @keyframes leaf-float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                25% { transform: translateY(-5px) rotate(5deg); }
+                75% { transform: translateY(5px) rotate(-5deg); }
+              }
+              @keyframes fade-pulse {
+                0%, 100% { opacity: 0.6; }
+                50% { opacity: 1; }
+              }
+              .matcha-spinner {
+                animation: matcha-spin 2s ease-in-out infinite;
+              }
+              .leaf-float {
+                animation: leaf-float 3s ease-in-out infinite;
+              }
+              .fade-pulse {
+                animation: fade-pulse 1.5s ease-in-out infinite;
+              }
+            `}</style>
+            
+            <div className="relative">
+              {/* Outer ring */}
+              <div className="w-12 h-12 border-4 border-emerald-100 rounded-full"></div>
+              
+              {/* Spinning matcha ring */}
+              <div className="w-12 h-12 absolute top-0 left-0 border-4 border-transparent border-t-emerald-500 border-r-emerald-400 rounded-full matcha-spinner"></div>
+              
+              {/* Center leaf icon */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <Leaf className="w-4 h-4 text-emerald-600 leaf-float" />
+              </div>
+              
+              {/* Floating particles */}
+              <div className="absolute -top-2 -left-2 w-2 h-2 bg-emerald-300 rounded-full fade-pulse" style={{ animationDelay: '0s' }}></div>
+              <div className="absolute -top-2 -right-2 w-1.5 h-1.5 bg-green-300 rounded-full fade-pulse" style={{ animationDelay: '0.5s' }}></div>
+              <div className="absolute -bottom-2 -left-2 w-1.5 h-1.5 bg-teal-300 rounded-full fade-pulse" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-emerald-400 rounded-full fade-pulse" style={{ animationDelay: '1.5s' }}></div>
+            </div>
+            
+            <p className="mt-4 text-emerald-700 font-medium text-sm fade-pulse">
+              Loading tea details...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Helper function to render list items with icons

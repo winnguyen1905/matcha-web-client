@@ -1,6 +1,7 @@
 import { ID, Models } from 'appwrite';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { account } from '../lib/appwrite';
+import { FullScreenLoader } from '../routes/components/LoadingSpinner';
 
 type User = Models.User<Models.Preferences> | null;
 
@@ -78,7 +79,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>; // Or a proper loading component
+    return <FullScreenLoader message="Authenticating..." variant="matcha" />;
   }
 
   return (

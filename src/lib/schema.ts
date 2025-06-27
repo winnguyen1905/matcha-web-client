@@ -10,6 +10,65 @@ interface BaseDocument extends Partial<Models.Document> {
   $collectionId?: string;
 }
 
+// Address Interface (embedded in other objects)
+export interface Address {
+  type?: 'shipping' | 'billing' | 'both';
+  label?: string; // e.g., "Home", "Work", "Default"
+  fullName: string;
+  phone?: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  isDefault?: boolean;
+}
+
+// User Information Interface (separate from authentication)
+export interface UserInformation extends BaseDocument {
+  userId: string; // Links to Appwrite Auth User ID
+  fullName: string;
+  phone?: string;
+  avatarUrl?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  addresses: Address[]; // Array of saved addresses
+  preferences: {
+    theme?: 'light' | 'dark' | 'system';
+    language?: 'en' | 'vi' | 'cn';
+    notifications?: {
+      email: boolean;
+      sms: boolean;
+      push: boolean;
+    };
+  };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Simplified Shipping Address (for orders)
+export interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+}
+
+// Simplified Billing Address (for orders)
+export interface BillingAddress {
+  sameAsShipping: boolean;
+  fullName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+}
+
 // Tax Rate Interface
 export interface TaxRate extends BaseDocument {
   name: string;
@@ -32,28 +91,6 @@ export interface OrderItem extends BaseDocument {
   unitPrice: number;
   total: number;
   discountAmount: number;
-}
-
-// Shipping Address Interface
-export interface ShippingAddress {
-  fullName: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
-}
-
-// Billing Address Interface
-export interface BillingAddress {
-  sameAsShipping: boolean;
-  fullName?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postalCode?: string;
 }
 
 // Order Status Enum
@@ -163,6 +200,7 @@ export interface DiscountUsage extends BaseDocument {
 // Collection IDs
 export const COLLECTIONS = {
   ACCOUNTS: import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || 'accounts',
+  USER_INFORMATION: import.meta.env.VITE_APPWRITE_USER_INFORMATION_COLLECTION_ID || 'user_information',
   TAX_RATES: import.meta.env.VITE_APPWRITE_TAX_RATES_COLLECTION_ID || 'tax_rates',
   ORDERS: import.meta.env.VITE_APPWRITE_ORDERS_COLLECTION_ID || 'orders',
   ORDER_ITEMS: import.meta.env.VITE_APPWRITE_ORDER_ITEMS_COLLECTION_ID || 'order_items',
@@ -200,7 +238,29 @@ export const isValidDiscountUsageStatus = (status: string): status is DiscountUs
   return ['PENDING', 'COMPLETED', 'FAILED'].includes(status);
 };
 
+// Utility functions for Address handling
+export const getDefaultAddress = (addresses: Address[]): Address | null => {
+  return addresses.find(addr => addr.isDefault) || addresses[0] || null;
+};
+
+export const getAddressesByType = (addresses: Address[], type: 'shipping' | 'billing'): Address[] => {
+  return addresses.filter(addr => addr.type === type || addr.type === 'both');
+};
+
+export const addressToShippingAddress = (address: Address): ShippingAddress => ({
+  fullName: address.fullName,
+  phone: address.phone || '',
+  address: address.address,
+  city: address.city,
+  state: address.state,
+  country: address.country,
+  postalCode: address.postalCode,
+});
+
 // Utility types for creating/updating documents
+export type CreateUserInformation = Omit<UserInformation, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
+export type UpdateUserInformation = Partial<CreateUserInformation>;
+
 export type CreateTaxRate = Omit<TaxRate, '$id' | '$createdAt' | '$updatedAt' | '$permissions' | '$databaseId' | '$collectionId'>;
 export type UpdateTaxRate = Partial<CreateTaxRate>;
 
@@ -224,6 +284,11 @@ export interface QueryOptions {
   offset?: number;
   orderBy?: string[];
   select?: string[];
+}
+
+export interface UserInformationQuery extends QueryOptions {
+  userId?: string;
+  isActive?: boolean;
 }
 
 export interface TaxRateQuery extends QueryOptions {
@@ -262,6 +327,15 @@ export interface DatabaseError {
 
 // Constants for validation
 export const VALIDATION_LIMITS = {
+  USER_INFORMATION: {
+    FULL_NAME_MIN: 2,
+    FULL_NAME_MAX: 100,
+    PHONE_MIN: 10,
+    PHONE_MAX: 20,
+    ADDRESS_MIN: 5,
+    ADDRESS_MAX: 500,
+    MAX_ADDRESSES: 10,
+  },
   TAX_RATE: {
     RATE_MIN: 0,
     RATE_MAX: 100,

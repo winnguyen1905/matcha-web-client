@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaLock, FaCheck, FaSpinner, FaCreditCard, FaTruck } from 'react-icons/fa';
+import { FaLock, FaCheck, FaSpinner, FaCreditCard, FaTruck, FaMapMarkerAlt } from 'react-icons/fa';
 import { useAppSelector, useAppDispatch } from '../../app/hooks';
 import { selectCartItems, selectCartTotal, selectCartItemCount, clearCart } from '../../hooks/Cart';
 import { useDiscounts } from '../../hooks/Discount';
@@ -8,6 +8,7 @@ import type { DiscountCalculationResult } from '../../hooks/Discount';
 import { useOrders } from '../../hooks/Order';
 import { useSalesTax } from '../../hooks/useSalesTax';
 import { useAuth } from '../../hooks/useAuth';
+import { useAccount } from '../../hooks/Account';
 import {
   ShippingAddress,
   BillingAddress,
@@ -17,12 +18,15 @@ import {
   PaymentStatus,
   CreateOrder,
   CreateOrderItem,
+  Address,
+  addressToShippingAddress,
 } from '../../lib/schema';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAuth();
+  const { userProfile, getShippingAddresses, getBillingAddresses } = useAccount();
   const { createOrder, loading: orderLoading } = useOrders();
   const { applyDiscountToOrder } = useDiscounts();
   
@@ -36,7 +40,9 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Shipping form
+  // Address selection and form
+  const [selectedShippingAddressIndex, setSelectedShippingAddressIndex] = useState<number | null>(null);
+  const [useNewShippingAddress, setUseNewShippingAddress] = useState(false);
   const [shippingInfo, setShippingInfo] = useState<ShippingAddress>({
     fullName: '',
     phone: '',
@@ -65,11 +71,23 @@ const CheckoutPage: React.FC = () => {
 
   // Validation states
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
+  // Get saved addresses
+  const savedShippingAddresses = getShippingAddresses();
+  const savedBillingAddresses = getBillingAddresses();
+
+  // Get effective shipping address for tax calculation
+  const effectiveShippingAddress = useMemo(() => {
+    if (selectedShippingAddressIndex !== null && savedShippingAddresses[selectedShippingAddressIndex]) {
+      return addressToShippingAddress(savedShippingAddresses[selectedShippingAddressIndex]);
+    }
+    return shippingInfo;
+  }, [selectedShippingAddressIndex, savedShippingAddresses, shippingInfo]);
 
   // Tax calculation
   const { tax, loading: taxLoading } = useSalesTax({
-    zip: shippingInfo.postalCode,
-    state: shippingInfo.state,
+    zip: effectiveShippingAddress.postalCode,
+    state: effectiveShippingAddress.state,
     amount: appliedDiscount?.finalAmount || subtotal,
   });
 
@@ -92,6 +110,14 @@ const CheckoutPage: React.FC = () => {
     };
   }, [items, subtotal, user]);
 
+  // Initialize with default address if available
+  useEffect(() => {
+    if (savedShippingAddresses.length > 0 && selectedShippingAddressIndex === null) {
+      const defaultIndex = savedShippingAddresses.findIndex(addr => addr.isDefault);
+      setSelectedShippingAddressIndex(defaultIndex >= 0 ? defaultIndex : 0);
+    }
+  }, [savedShippingAddresses, selectedShippingAddressIndex]);
+
   // Redirect if cart is empty
   useEffect(() => {
     if (items.length === 0) {
@@ -103,6 +129,12 @@ const CheckoutPage: React.FC = () => {
   const validateShipping = (): boolean => {
     const errors: Record<string, string> = {};
     
+    // If using saved address, it's already valid
+    if (selectedShippingAddressIndex !== null && !useNewShippingAddress) {
+      return true;
+    }
+    
+    // Validate new address
     if (!shippingInfo.fullName.trim()) errors.fullName = 'Full name is required';
     if (!shippingInfo.phone.trim()) errors.phone = 'Phone number is required';
     if (!shippingInfo.address.trim()) errors.address = 'Address is required';
@@ -195,7 +227,7 @@ const CheckoutPage: React.FC = () => {
         currency: 'USD' as Currency,
         paymentMethod,
         paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PENDING' as PaymentStatus,
-        shippingAddress: shippingInfo,
+        shippingAddress: effectiveShippingAddress,
         billingAddress: billingInfo.sameAsShipping ? undefined : billingInfo,
         discountCode: appliedDiscount?.appliedDiscount?.code,
         createdAt: new Date().toISOString(),
@@ -292,6 +324,81 @@ const CheckoutPage: React.FC = () => {
                       <FaTruck className="mr-2" />
                       Shipping Information
                     </h2>
+
+                    {/* Saved Addresses */}
+                    {savedShippingAddresses.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-medium mb-4 dark:text-white">Choose a saved address</h3>
+                        <div className="space-y-3">
+                          {savedShippingAddresses.map((address, index) => (
+                            <div
+                              key={index}
+                              className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                                selectedShippingAddressIndex === index && !useNewShippingAddress
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                  : 'border-gray-300 hover:border-green-300'
+                              }`}
+                              onClick={() => {
+                                setSelectedShippingAddressIndex(index);
+                                setUseNewShippingAddress(false);
+                              }}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <FaMapMarkerAlt className="text-green-600" />
+                                    {address.label && (
+                                      <span className="text-sm font-medium text-green-600 bg-green-100 px-2 py-1 rounded">
+                                        {address.label}
+                                      </span>
+                                    )}
+                                    {address.isDefault && (
+                                      <span className="text-sm font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                        Default
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="font-medium dark:text-white">{address.fullName}</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {address.address}
+                                  </p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {address.city}, {address.state} {address.postalCode}
+                                  </p>
+                                  {address.phone && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                      {address.phone}
+                                    </p>
+                                  )}
+                                </div>
+                                <input
+                                  type="radio"
+                                  checked={selectedShippingAddressIndex === index && !useNewShippingAddress}
+                                  onChange={() => {
+                                    setSelectedShippingAddressIndex(index);
+                                    setUseNewShippingAddress(false);
+                                  }}
+                                  className="w-4 h-4 text-green-600"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-4">
+                          <button
+                            type="button"
+                            onClick={() => setUseNewShippingAddress(!useNewShippingAddress)}
+                            className="text-green-600 hover:text-green-700 font-medium text-sm"
+                          >
+                            {useNewShippingAddress ? 'Use saved address' : 'Use a new address'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* New Address Form */}
+                    {(useNewShippingAddress || savedShippingAddresses.length === 0) && (
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -418,6 +525,7 @@ const CheckoutPage: React.FC = () => {
                         </select>
                       </div>
                     </div>
+                    )}
 
                     <div className="mt-6 flex justify-end">
                       <button

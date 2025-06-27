@@ -109,7 +109,7 @@ const CartPage: React.FC = () => {
   /* ------------------------------------------------------------------ */
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-8 py-8 pt-24 min-h-screen">
+      <div className="container mx-auto px-8 py-8 min-h-screen">
         <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
           <div className="text-6xl mb-4">🛒</div>

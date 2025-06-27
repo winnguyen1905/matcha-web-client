@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   AppBar, 
   Toolbar, 
@@ -51,6 +52,7 @@ export const AdminHeader = ({
   notificationCount = 0,
   onNotificationClick
 }: AdminHeaderProps) => {
+  const navigate = useNavigate();
   const headerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
@@ -84,6 +86,11 @@ export const AdminHeader = ({
 
   const handleAccountMenuClose = () => {
     setAccountMenuAnchor(null);
+  };
+
+  const handleProfileClick = () => {
+    handleAccountMenuClose();
+    navigate('/profile');
   };
 
   const handleQuickMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -304,9 +311,28 @@ export const AdminHeader = ({
 
         {/* Right Section - Actions (mobile: More button) */}
         {isMobile ? (
-          <IconButton onClick={handleMobileMenuOpen}>
-            <MoreVert />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Avatar for mobile */}
+            <Tooltip title="Go to Profile">
+              <IconButton onClick={handleProfileClick}>
+                <Avatar
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    backgroundColor: '#2563eb',
+                    fontSize: '0.75rem',
+                    fontWeight: 600
+                  }}
+                  src={user?.prefs?.avatar || ''}
+                >
+                  {getInitials(user?.name)}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+            <IconButton onClick={handleMobileMenuOpen}>
+              <MoreVert />
+            </IconButton>
+          </Box>
         ) : (
           <Box
             sx={{
@@ -384,10 +410,27 @@ export const AdminHeader = ({
               </IconButton>
             </Tooltip>
 
-            {/* Account */}
-            <Tooltip title="Account">
+            {/* Account Menu */}
+            <Tooltip title="Account Menu">
               <IconButton
                 onClick={handleAccountMenuOpen}
+                sx={{
+                  color: '#666',
+                  display: { xs: 'none', md: 'flex' },
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    color: '#2563eb'
+                  }
+                }}
+              >
+                <AccountCircle />
+              </IconButton>
+            </Tooltip>
+
+            {/* Avatar - Direct Profile Link */}
+            <Tooltip title="Go to Profile">
+              <IconButton
+                onClick={handleProfileClick}
                 sx={{ ml: 1 }}
               >
                 <Avatar
@@ -396,7 +439,12 @@ export const AdminHeader = ({
                     height: 32,
                     backgroundColor: '#2563eb',
                     fontSize: '0.875rem',
-                    fontWeight: 600
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      transition: 'transform 0.2s ease-in-out'
+                    }
                   }}
                   src={user?.prefs?.avatar || ''}
                 >
@@ -443,6 +491,48 @@ export const AdminHeader = ({
           </MenuItem>
         </Menu>
 
+        {/* Mobile Menu */}
+        <Menu
+          anchorEl={mobileMenuAnchor}
+          open={Boolean(mobileMenuAnchor)}
+          onClose={handleMobileMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              minWidth: 200,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e0e0e0'
+            }
+          }}
+        >
+          <MenuItem onClick={() => { handleMobileMenuClose(); toggleMode(); }}>
+            {mode === 'dark' ? <Brightness7 sx={{ mr: 2, fontSize: 20 }} /> : <Brightness4 sx={{ mr: 2, fontSize: 20 }} />}
+            {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </MenuItem>
+          <MenuItem onClick={() => { handleMobileMenuClose(); onNotificationClick?.(); }}>
+            <Badge badgeContent={notificationCount} color="error">
+              <NotificationsIcon sx={{ mr: 2, fontSize: 20 }} />
+            </Badge>
+            Notifications
+          </MenuItem>
+          <MenuItem onClick={() => { handleMobileMenuClose(); handleProfileClick(); }}>
+            <AccountCircle sx={{ mr: 2, fontSize: 20 }} />
+            Profile
+          </MenuItem>
+          <MenuItem onClick={handleMobileMenuClose}>
+            <SettingsIcon sx={{ mr: 2, fontSize: 20 }} />
+            Settings
+          </MenuItem>
+        </Menu>
+
         {/* Account Menu */}
         <Menu
           anchorEl={accountMenuAnchor}
@@ -474,7 +564,7 @@ export const AdminHeader = ({
             </Typography>
           </Box>
           
-          <MenuItem onClick={handleAccountMenuClose}>
+          <MenuItem onClick={handleProfileClick}>
             <AccountCircle sx={{ mr: 2, fontSize: 20 }} />
             Profile
           </MenuItem>

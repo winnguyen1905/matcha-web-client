@@ -90,7 +90,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       await register({
-        name: formData.name.trim(),
+        fullName: formData.name.trim(),
         email: formData.email.trim(),
         password: formData.password,
         phone: formData.phone.trim(),

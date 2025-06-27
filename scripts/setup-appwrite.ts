@@ -23,12 +23,13 @@ config({ path: path.resolve(__dirname, "../.env") });
 // -----------------------------    MOCK TEST IF ERROR HAPPENED
 // REPLACE WITH ACTUAL COLLECTION ID FROM APPWRITE
 const COLLECTIONS = {
-  TAX_RATES: "",
-  ORDERS: "",
-  ORDER_ITEMS: "",
-  DISCOUNTS: "",
-  DISCOUNT_USAGE: "",
-  USER_DISCOUNTS: "",
+  USER_INFORMATION: "user_information",
+  TAX_RATES: "tax_rates",
+  ORDERS: "orders",
+  ORDER_ITEMS: "order_items",
+  DISCOUNTS: "discounts",
+  DISCOUNT_USAGE: "discount_usage",
+  USER_DISCOUNTS: "user_discounts",
 } as const;
 
 // EXAMPLE 
@@ -58,7 +59,20 @@ const DATABASE_ID = process.env.VITE_APPWRITE_DATABASE_ID || "default";
 
 // Collection attributes
 const collectionAttributes: Record<string, any> = {
-  [COLLECTIONS.TAX_RATES || "default"]: [
+  [COLLECTIONS.USER_INFORMATION]: [
+    { key: "userId", type: "string", size: 36, required: true },
+    { key: "fullName", type: "string", size: 100, required: true },
+    { key: "phone", type: "string", size: 20, required: false },
+    { key: "avatarUrl", type: "string", size: 500, required: false },
+    { key: "dateOfBirth", type: "string", size: 20, required: false },
+    { key: "gender", type: "string", size: 20, required: false },
+    { key: "addresses", type: "json", required: false },
+    { key: "preferences", type: "json", required: false },
+    { key: "isActive", type: "boolean", required: false, default: true },
+    { key: "createdAt", type: "string", size: 100, required: true },
+    { key: "updatedAt", type: "string", size: 100, required: true },
+  ],
+  [COLLECTIONS.TAX_RATES]: [
     { key: "name", type: "string", size: 100, required: true },
     { key: "rate", type: "double", required: true, min: 0.0, max: 100.0 },
     { key: "country", type: "string", size: 100, required: false },
@@ -74,7 +88,7 @@ const collectionAttributes: Record<string, any> = {
     { key: "priority", type: "integer", required: true, min: 0, max: 100 },
     { key: "description", type: "string", size: 500, required: false },
   ],
-  [COLLECTIONS.ORDERS || "default"]: [
+  [COLLECTIONS.ORDERS]: [
     { key: "orderCode", type: "string", size: 50, required: true },
     { key: "userId", type: "string", size: 36, required: true },
     { key: "status", type: "string", size: 20, required: true },
@@ -123,7 +137,7 @@ const collectionAttributes: Record<string, any> = {
     { key: "userAgent", type: "string", size: 500, required: false },
     { key: "createdAt", type: "string", size: 100, required: true },
   ],
-  [COLLECTIONS.ORDER_ITEMS || "default"]: [
+  [COLLECTIONS.ORDER_ITEMS]: [
     { key: "orderId", type: "string", size: 36, required: true },
     { key: "productId", type: "string", size: 36, required: true },
     { key: "productVariantId", type: "string", size: 36, required: true },
@@ -144,7 +158,7 @@ const collectionAttributes: Record<string, any> = {
       max: 1000000.0,
     },
   ],
-  [COLLECTIONS.DISCOUNTS || "default"]: [
+  [COLLECTIONS.DISCOUNTS]: [
     { key: "code", type: "string", size: 50, required: true },
     { key: "description", type: "string", size: 500, required: false },
     { key: "discountType", type: "string", size: 20, required: true },
@@ -184,7 +198,7 @@ const collectionAttributes: Record<string, any> = {
     { key: "appliesTo", type: "json", required: true },
     { key: "createdBy", type: "string", size: 36, required: true },
   ],
-  [COLLECTIONS.DISCOUNT_USAGE || "default"]: [
+  [COLLECTIONS.DISCOUNT_USAGE]: [
     { key: "discountId", type: "string", size: 36, required: true },
     { key: "userId", type: "string", size: 36, required: true },
     { key: "orderId", type: "string", size: 36, required: true },
@@ -205,7 +219,7 @@ const collectionAttributes: Record<string, any> = {
     { key: "usedAt", type: "string", size: 100, required: true },
     { key: "usageStatus", type: "string", size: 20, required: true },
   ],
-  [COLLECTIONS.USER_DISCOUNTS || "default"]: [
+  [COLLECTIONS.USER_DISCOUNTS]: [
     { key: "userId", type: "string", size: 36, required: true },
     { key: "discountId", type: "string", size: 36, required: true },
     { key: "createdAt", type: "string", size: 100, required: true },
@@ -214,21 +228,26 @@ const collectionAttributes: Record<string, any> = {
 
 // Indexes configuration
 const collectionIndexes: Record<string, any[]> = {
-  [COLLECTIONS.ORDERS || "default"]: [
+  [COLLECTIONS.USER_INFORMATION]: [
+    { key: "idx_userId", type: "unique", attributes: ["userId"] },
+    { key: "idx_isActive", type: "key", attributes: ["isActive"] },
+    { key: "idx_createdAt", type: "key", attributes: ["createdAt"] },
+  ],
+  [COLLECTIONS.ORDERS]: [
     { key: "idx_userId", type: "key", attributes: ["userId"] },
     { key: "idx_status", type: "key", attributes: ["status"] },
     { key: "idx_createdAt", type: "key", attributes: ["createdAt"] },
   ],
-  [COLLECTIONS.DISCOUNTS || "default"]: [
+  [COLLECTIONS.DISCOUNTS]: [
     { key: "idx_code", type: "unique", attributes: ["code"] },
-    { key: "idx_isActive", type: "key ", attributes: ["isActive"] },
+    { key: "idx_isActive", type: "key", attributes: ["isActive"] },
   ],
-  [COLLECTIONS.DISCOUNT_USAGE || "default"]: [
+  [COLLECTIONS.DISCOUNT_USAGE]: [
     { key: "idx_discountId", type: "key", attributes: ["discountId"] },
     { key: "idx_userId", type: "key", attributes: ["userId"] },
     { key: "idx_orderId", type: "unique", attributes: ["orderId"] },
   ],
-  [COLLECTIONS.USER_DISCOUNTS || "default"]: [
+  [COLLECTIONS.USER_DISCOUNTS]: [
     { key: "idx_userId", type: "key", attributes: ["userId"] },
     { key: "idx_discountId", type: "key", attributes: ["discountId"] },
     {

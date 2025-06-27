@@ -1,102 +1,89 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ID, Query, Models, AppwriteException } from 'appwrite';
 import { databases, account } from '../lib/appwrite';
+import { 
+  UserInformation, 
+  Address, 
+  CreateUserInformation, 
+  UpdateUserInformation,
+  COLLECTIONS,
+  addressToShippingAddress,
+  getDefaultAddress,
+  getAddressesByType
+} from '../lib/schema';
 
-// Environment variables with proper type safety
+// Environment variables
 const ENV = {
   DATABASE_ID: import.meta.env.VITE_APPWRITE_DATABASE_ID || '',
-  COLLECTION_ID: import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || '',
-  API_KEY: import.meta.env.VITE_APPWRITE_API_KEY || '',
-  ENDPOINT: import.meta.env.VITE_APPWRITE_ENDPOINT || '',
-  PROJECT_ID: import.meta.env.VITE_APPWRITE_PROJECT_ID || ''
 } as const;
 
-export type Labels = 'ADMIN' | 'MANAGER' | 'CUSTOMER';
-
-// Types
-export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
-
-export type UserLanguage = 'VI' | 'EN' | 'CN';
-
-export type UserNotification = 'EMAIL' | 'SMS' | 'PUSH';
-
-export interface UserPreferences {
-  theme?: ThemePreference;
-  notifications?: UserNotification[];
-  language?: UserLanguage;
+// Simplified Auth User (from Appwrite)
+export interface AuthUser extends Models.User<Models.Preferences> {
+  // Only authentication-related fields
 }
 
-interface AppwriteDocument {
-  $id: string;
-  $collectionId: string;
-  $databaseId: string;
-  $createdAt: string;
-  $updatedAt: string;
-  $permissions: string[];
-}
-
-export interface UserAccount extends Omit<Models.User<Models.Preferences>, 'phone' | 'status'>, AppwriteDocument {
-  // Core fields
-  name: string;
-  phone: string;
-  status: boolean;
-  labels: Labels[];
-  address: string;
-  preferences: UserPreferences;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  lastLoginAt?: string;
-  avatarUrl?: string;
+// Combined User (Auth + Profile)
+export interface User {
+  auth: AuthUser;
+  profile: UserInformation | null;
 }
 
 interface RegisterData {
   email: string;
   password: string;
-  name: string;
+  fullName: string;
   phone?: string;
 }
 
-interface UpdateUserData extends Partial<Omit<UserAccount, '$id' | '$createdAt' | '$updatedAt' | '$permissions'>> {
-  password?: never; // Prevent direct password updates
-}
-
-export type { UpdateUserData };
-
 interface AccountContextType {
   // State
-  currentUser: UserAccount | null;
-  users: UserAccount[];
+  currentUser: User | null;
+  authUser: AuthUser | null;
+  userProfile: UserInformation | null;
   loading: boolean;
   error: string | null;
   
   // Auth methods
-  login: (email: string, password: string) => Promise<{ session: Models.Session; user: UserAccount }>;
-  register: (userData: RegisterData) => Promise<{ accountData: Models.User<Models.Preferences>; user: UserAccount }>;
+  login: (email: string, password: string) => Promise<{ session: Models.Session; user: User }>;
+  register: (userData: RegisterData) => Promise<{ accountData: AuthUser; user: User }>;
   logout: () => Promise<void>;
   
-  // User management
-  getCurrentUser: () => Promise<UserAccount | null>;
-  getUserById: (id: string) => Promise<UserAccount | null>;
-  updateUser: (id: string, updates: UpdateUserData) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
-  listUsers: (queries?: string[]) => Promise<UserAccount[]>;
-  searchUsers: (query: string) => Promise<UserAccount[]>;
+  // Profile management
+  getUserProfile: (userId?: string) => Promise<UserInformation | null>;
+  updateProfile: (updates: Partial<UserInformation>) => Promise<UserInformation>;
+  createProfile: (data: CreateUserInformation) => Promise<UserInformation>;
+  
+  // Address management
+  addAddress: (address: Omit<Address, 'isDefault'>) => Promise<UserInformation>;
+  updateAddress: (addressIndex: number, address: Address) => Promise<UserInformation>;
+  removeAddress: (addressIndex: number) => Promise<UserInformation>;
+  setDefaultAddress: (addressIndex: number) => Promise<UserInformation>;
+  getShippingAddresses: () => Address[];
+  getBillingAddresses: () => Address[];
+  getDefaultShippingAddress: () => Address | null;
+  
+  // Utility methods
+  refreshSession: () => Promise<{ session: Models.Session; user: User } | null>;
+  getCurrentUser: () => Promise<User | null>;
   
   // Password management
   requestPasswordReset: (email: string) => Promise<void>;
   confirmPasswordReset: (userId: string, secret: string, password: string, confirmPassword: string) => Promise<void>;
-  updatePassword: (currentPassword: string, newPassword: string, userId?: string) => Promise<void>;
-  updateEmail: (email: string, password: string) => Promise<UserAccount>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateEmail: (email: string, password: string) => Promise<AuthUser>;
   
   // Email verification
   sendVerificationEmail: () => Promise<void>;
-  verifyEmail: (userId: string, secret: string) => Promise<UserAccount>;
+  verifyEmail: (userId: string, secret: string) => Promise<AuthUser>;
   
-  // Admin functions
+  // Admin
+  users: UserAccount[];
+  listUsers: () => Promise<void>;
+  searchUsers: (query: string) => Promise<void>;
+  updateUser: (userId: string, data: UpdateUserData) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
   updateUserRole: (userId: string, role: Labels) => Promise<void>;
   updateUserStatus: (userId: string, status: boolean) => Promise<void>;
-  refreshSession: () => Promise<{ session: Models.Session; user: UserAccount } | null>;
-  updateProfile: (updates: Partial<UserAccount>) => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -109,128 +96,251 @@ export function useAccount() {
   return context;
 }
 
-const DEFAULT_PREFERENCES: UserPreferences = {
-  theme: 'SYSTEM',
-  notifications: [],
-  language: 'EN'
-};
+// Alias for backward compatibility
+export const useUser = useAccount;
 
-// Moved outside the component to prevent recreation
-const parseUserData = (data: any): UserAccount => {
-  const now = new Date().toISOString();
-  const baseUser: Partial<UserAccount> = {
-    $id: data.$id || '',
-    $createdAt: data.$createdAt || now,
-    $updatedAt: data.$updatedAt || now,
-    $permissions: Array.isArray(data.$permissions) ? data.$permissions : [],
-    email: data.email || '',
-    name: data.name || '',
-    phone: data.phone || '',
-    status: data.status || false,
-    emailVerification: data.emailVerification || false,
-    labels: Array.isArray(data.labels) ? data.labels : [],
-    address: data.address,
-    preferences: data.preferences 
-      ? typeof data.preferences === 'string' 
-        ? { ...DEFAULT_PREFERENCES, ...JSON.parse(data.preferences) }
-        : { ...DEFAULT_PREFERENCES, ...data.preferences }
-      : { ...DEFAULT_PREFERENCES },
-    isEmailVerified: data.isEmailVerified || false,
-    lastLoginAt: data.lastLoginAt,
-    avatarUrl: data.avatarUrl
-  };
-  return baseUser as UserAccount;
+const DEFAULT_PREFERENCES = {
+  theme: 'system' as const,
+  language: 'en' as const,
+  notifications: {
+    email: true,
+    sms: false,
+    push: true,
+  },
 };
 
 export function AccountProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
-  const [users, setUsers] = useState<UserAccount[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserInformation | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Refs
-  const listUsersRef = useRef<((queries?: string[]) => Promise<UserAccount[]>) | null>(null);
+  const [users, setUsers] = useState<UserAccount[]>([]);
 
-  // List all users (admin function)
-  const listUsers = useCallback(async (queries: string[] = []): Promise<UserAccount[]> => {
+  // Get user profile by ID
+  const getUserProfile = useCallback(async (userId?: string): Promise<UserInformation | null> => {
     try {
-      setLoading(true);
+      const targetUserId = userId || authUser?.$id;
+      if (!targetUserId) throw new Error('No user ID provided');
+
       const response = await databases.listDocuments(
         ENV.DATABASE_ID,
-        ENV.COLLECTION_ID,
-        queries
+        COLLECTIONS.USER_INFORMATION,
+        [Query.equal('userId', targetUserId)]
       );
-      const usersList = response.documents.map(doc => parseUserData(doc));
-      setUsers(usersList);
-      return usersList;
-    } catch (err) {
-      console.error("Error listing users:", err);
-      setError("Failed to fetch users");
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  // Store listUsers in ref for external access
-  useEffect(() => {
-    listUsersRef.current = listUsers;
-  }, [listUsers]);
-  
-  // Get current authenticated user
-  const getCurrentUser = useCallback(async (): Promise<UserAccount> => {
+      if (response.documents.length === 0) {
+        return null;
+      }
+
+      const profile = response.documents[0] as UserInformation;
+      if (!userId || userId === authUser?.$id) {
+        setUserProfile(profile);
+      }
+      return profile;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setError('Failed to fetch user profile');
+      return null;
+    }
+  }, [authUser?.$id]);
+
+  // Create user profile
+  const createProfile = useCallback(async (data: CreateUserInformation): Promise<UserInformation> => {
     try {
       setLoading(true);
-      // Get auth user
-      const authUser = await account.get();
-      if (!authUser) throw new Error('No authenticated user');
-      // Get extended user data
-      const userDoc = await databases.getDocument(
+      const now = new Date().toISOString();
+      
+      const profileData = {
+        ...data,
+        preferences: { ...DEFAULT_PREFERENCES, ...data.preferences },
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const response = await databases.createDocument(
         ENV.DATABASE_ID,
-        ENV.COLLECTION_ID,
-        authUser.$id
+        COLLECTIONS.USER_INFORMATION,
+        ID.unique(),
+        profileData
       );
-      // Update last login timestamp
-      await databases.updateDocument(
-        ENV.DATABASE_ID,
-        ENV.COLLECTION_ID,
-        authUser.$id,
-        { lastLoginAt: new Date().toISOString() }
-      );
-      const userData = parseUserData({ 
-        ...authUser, 
-        ...userDoc,
-        lastLoginAt: new Date().toISOString() 
-      });
-      setCurrentUser(userData);
-      return userData;
+
+      const profile = response as UserInformation;
+      setUserProfile(profile);
+      return profile;
     } catch (error) {
-      const appwriteError = error as AppwriteException;
-      console.error('Failed to fetch current user:', appwriteError.message);
-      // Clear invalid session
-      if (appwriteError.code === 401) {
-        await account.deleteSession('current');
-        setCurrentUser(null);
-      }
+      console.error('Error creating user profile:', error);
+      setError('Failed to create user profile');
       throw error;
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Update user profile
+  const updateProfile = useCallback(async (updates: Partial<UserInformation>): Promise<UserInformation> => {
+    try {
+      if (!userProfile) throw new Error('No user profile found');
+      
+      setLoading(true);
+      const updatedData = {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await databases.updateDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.USER_INFORMATION,
+        userProfile.$id,
+        updatedData
+      );
+
+      const updatedProfile = response as UserInformation;
+      setUserProfile(updatedProfile);
+      
+      // Update current user
+      if (currentUser) {
+        setCurrentUser({
+          ...currentUser,
+          profile: updatedProfile,
+        });
+      }
+      
+      return updatedProfile;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      setError('Failed to update user profile');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [userProfile, currentUser]);
+
+  // Address management methods
+  const addAddress = useCallback(async (address: Omit<Address, 'isDefault'>): Promise<UserInformation> => {
+    if (!userProfile) throw new Error('No user profile found');
+    
+    const newAddress: Address = {
+      ...address,
+      isDefault: userProfile.addresses.length === 0, // First address is default
+    };
+    
+    const updatedAddresses = [...userProfile.addresses, newAddress];
+    return updateProfile({ addresses: updatedAddresses });
+  }, [userProfile, updateProfile]);
+
+  const updateAddress = useCallback(async (addressIndex: number, address: Address): Promise<UserInformation> => {
+    if (!userProfile) throw new Error('No user profile found');
+    if (addressIndex < 0 || addressIndex >= userProfile.addresses.length) {
+      throw new Error('Invalid address index');
+    }
+    
+    const updatedAddresses = [...userProfile.addresses];
+    updatedAddresses[addressIndex] = address;
+    return updateProfile({ addresses: updatedAddresses });
+  }, [userProfile, updateProfile]);
+
+  const removeAddress = useCallback(async (addressIndex: number): Promise<UserInformation> => {
+    if (!userProfile) throw new Error('No user profile found');
+    if (addressIndex < 0 || addressIndex >= userProfile.addresses.length) {
+      throw new Error('Invalid address index');
+    }
+    
+    const updatedAddresses = userProfile.addresses.filter((_, index) => index !== addressIndex);
+    
+    // If we removed the default address, make the first remaining address default
+    if (userProfile.addresses[addressIndex].isDefault && updatedAddresses.length > 0) {
+      updatedAddresses[0].isDefault = true;
+    }
+    
+    return updateProfile({ addresses: updatedAddresses });
+  }, [userProfile, updateProfile]);
+
+  const setDefaultAddress = useCallback(async (addressIndex: number): Promise<UserInformation> => {
+    if (!userProfile) throw new Error('No user profile found');
+    if (addressIndex < 0 || addressIndex >= userProfile.addresses.length) {
+      throw new Error('Invalid address index');
+    }
+    
+    const updatedAddresses = userProfile.addresses.map((addr, index) => ({
+      ...addr,
+      isDefault: index === addressIndex,
+    }));
+    
+    return updateProfile({ addresses: updatedAddresses });
+  }, [userProfile, updateProfile]);
+
+  // Address utility methods
+  const getShippingAddresses = useCallback((): Address[] => {
+    if (!userProfile) return [];
+    return getAddressesByType(userProfile.addresses, 'shipping');
+  }, [userProfile]);
+
+  const getBillingAddresses = useCallback((): Address[] => {
+    if (!userProfile) return [];
+    return getAddressesByType(userProfile.addresses, 'billing');
+  }, [userProfile]);
+
+  const getDefaultShippingAddress = useCallback((): Address | null => {
+    if (!userProfile) return null;
+    return getDefaultAddress(userProfile.addresses);
+  }, [userProfile]);
+
+  // Get current authenticated user
+  const getCurrentUser = useCallback(async (): Promise<User | null> => {
+    try {
+      setLoading(true);
+      // Get auth user
+      const authUserData = await account.get();
+      if (!authUserData) return null;
+      
+      setAuthUser(authUserData);
+      
+      // Get user profile
+      const profile = await getUserProfile(authUserData.$id);
+      
+      const user: User = {
+        auth: authUserData,
+        profile,
+      };
+      
+      setCurrentUser(user);
+      return user;
+    } catch (error) {
+      const appwriteError = error as AppwriteException;
+      console.error('Failed to fetch current user:', appwriteError.message);
+      
+      // Clear invalid session
+      if (appwriteError.code === 401) {
+        await account.deleteSession('current').catch(() => {});
+        setCurrentUser(null);
+        setAuthUser(null);
+        setUserProfile(null);
+      }
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [getUserProfile]);
+
   // Login user
-  const login = useCallback(async (email: string, password: string): Promise<{ session: Models.Session; user: UserAccount }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ session: Models.Session; user: User }> => {
     try {
       setLoading(true);
       setError(null);
-      // Validate input
+      
       if (!email || !password) {
         throw new Error('Email and password are required');
       }
+      
       // Create session
       const session = await account.createEmailPasswordSession(email, password);
-      // Update current user
+      
+      // Get user data
       const user = await getCurrentUser();
+      if (!user) throw new Error('Failed to get user after login');
+      
       return { session, user };
     } catch (error) {
       const appwriteError = error as AppwriteException;
@@ -246,44 +356,47 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, [getCurrentUser]);
 
   // Register new user
-  const register = useCallback(async (userData: RegisterData): Promise<{ accountData: Models.User<any>; user: UserAccount }> => {
+  const register = useCallback(async (userData: RegisterData): Promise<{ accountData: AuthUser; user: User }> => {
     try {
       setLoading(true);
       setError(null);
-      // Validate input
-      if (!userData.email || !userData.password || !userData.name) {
+      
+      if (!userData.email || !userData.password || !userData.fullName) {
         throw new Error('All required fields must be provided');
       }
-      const { email, password, name, phone } = userData;
+      
+      const { email, password, fullName, phone } = userData;
       
       // Create Appwrite account
-      const accountData = await account.create(ID.unique(), email, password, name);
+      const accountData = await account.create(ID.unique(), email, password, fullName);
       
-      // Create user document in database
-      const userDoc = await databases.createDocument(
-        ENV.DATABASE_ID,
-        ENV.COLLECTION_ID,
-        accountData.$id,
-        {
-          name,
-          email,
-          phone: phone || '',
-          status: true,
-          labels: ['CUSTOMER'],
-          address: '',
-          preferences: DEFAULT_PREFERENCES,
-          isEmailVerified: false,
-          isPhoneVerified: false,
-          lastLoginAt: new Date().toISOString()
-        }
-      );
+      // Create user profile
+      const profileData: CreateUserInformation = {
+        userId: accountData.$id,
+        fullName,
+        phone: phone || '',
+        addresses: [],
+        preferences: DEFAULT_PREFERENCES,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       
-      const user = parseUserData({ ...accountData, ...userDoc });
+      const profile = await createProfile(profileData);
+      
+      const user: User = {
+        auth: accountData,
+        profile,
+      };
+      
       setCurrentUser(user);
+      setAuthUser(accountData);
+      
       return { accountData, user };
     } catch (error) {
       const appwriteError = error as AppwriteException;
       let errorMessage = 'Failed to register user';
+      
       if (appwriteError.type === 'user_already_exists') {
         errorMessage = 'An account with this email already exists';
       } else if (appwriteError.type === 'user_invalid_email') {
@@ -291,13 +404,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       } else if (appwriteError.type === 'user_password_policy_violation') {
         errorMessage = 'Password does not meet requirements';
       }
+      
       setError(errorMessage);
       console.error('Registration error:', appwriteError);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [createProfile]);
 
   // Logout user
   const logout = useCallback(async (): Promise<void> => {
@@ -307,231 +421,132 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       
       await account.deleteSession('current');
       setCurrentUser(null);
-      setUsers([]);
+      setAuthUser(null);
+      setUserProfile(null);
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, clear the local state
       setCurrentUser(null);
-      setUsers([]);
+      setAuthUser(null);
+      setUserProfile(null);
       throw new Error('Failed to logout');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Get user by ID (admin function)
-  const getUserById = useCallback(async (id: string): Promise<UserAccount | null> => {
+  // Refresh session
+  const refreshSession = useCallback(async (): Promise<{ session: Models.Session; user: User } | null> => {
+    try {
+      const session = await account.getSession('current');
+      if (session) {
+        const user = await getCurrentUser();
+        if (user) {
+          return { session, user };
+        }
+      }
+      return null;
+    } catch (error) {
+      setCurrentUser(null);
+      setAuthUser(null);
+      setUserProfile(null);
+      return null;
+    }
+  }, [getCurrentUser]);
+
+  // -------------------------------------------------------------------------
+  // Admin – Users Management (basic stubs, replace with real API integration)
+  // -------------------------------------------------------------------------
+  const listUsers = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
-      const userDoc = await databases.getDocument(
-        ENV.DATABASE_ID,
-        ENV.COLLECTION_ID,
-        id
-      );
-      return parseUserData(userDoc);
+      setError(null);
+
+      /*
+       * TODO: Replace this stub with real implementation, e.g. Appwrite Team SDK
+       * Example:
+       *   const response = await users.list();
+       *   setUsers(response.users as unknown as UserAccount[]);
+       */
+
+      // Temporary placeholder: keep current list untouched
+      setUsers(prev => prev);
     } catch (err) {
-      console.error("Error getting user by ID:", err);
-      setError("Failed to fetch user");
-      return null;
+      console.error('Failed to list users:', err);
+      setError('Failed to fetch users');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Define updateUser, deleteUser, searchUsers before context value
-  const updateUser = async (userId: string, updates: Partial<UserAccount>) => {
-    try {
-      setLoading(true);
-      const cleanUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
-        if (value !== undefined) {
-          acc[key] = value;
-        }
-        return acc;
-      }, {} as Record<string, any>);
-      await databases.updateDocument(
-        ENV.DATABASE_ID,
-        ENV.COLLECTION_ID,
-        userId,
-        {
-          ...cleanUpdates,
-          $updatedAt: new Date().toISOString()
-        } as Record<string, any>
-      );
-      if (currentUser?.$id === userId) {
-        const updatedUser = await getCurrentUser();
-        setCurrentUser(updatedUser);
+  const searchUsers = useCallback(async (query: string): Promise<void> => {
+    // Placeholder – for now just refetch full list
+    await listUsers();
+    // Optionally, filter client-side if needed
+    if (query && users.length) {
+      try {
+        const lowered = query.toLowerCase();
+        const filtered = users.filter(u =>
+          u.name.toLowerCase().includes(lowered) || u.email.toLowerCase().includes(lowered)
+        );
+        setUsers(filtered);
+      } catch (err) {
+        console.error('Failed to search users:', err);
       }
-      await listUsers();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Update failed');
-      throw err;
-    } finally {
-      setLoading(false);
     }
-  };
-  const deleteUser = async (id: string) => {
-    try {
-      setLoading(true);
-      await databases.deleteDocument(ENV.DATABASE_ID, ENV.COLLECTION_ID, id);
-      setCurrentUser(null);
-      await listUsers();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-  const searchUsers = async (query: string) => {
-    try {
-      setLoading(true);
-      const response = await databases.listDocuments(ENV.DATABASE_ID, ENV.COLLECTION_ID, [query]);
-      const usersList = response.documents.map(doc => parseUserData(doc));
-      setUsers(usersList);
-      return usersList;
-    } catch (err) {
-      console.error("Error searching users:", err);
-      setError("Failed to search users");
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [listUsers, users]);
 
-  // Memoize context value to prevent unnecessary re-renders
+  const updateUser = useCallback(async (userId: string, data: UpdateUserData): Promise<void> => {
+    // TODO: integrate with backend – currently update local state only
+    setUsers(prev => prev.map(u => (u.$id === userId ? { ...u, ...data } : u)));
+  }, []);
+
+  const deleteUser = useCallback(async (userId: string): Promise<void> => {
+    // TODO: backend delete
+    setUsers(prev => prev.filter(u => u.$id !== userId));
+  }, []);
+
+  const updateUserRole = useCallback(async (userId: string, role: Labels): Promise<void> => {
+    setUsers(prev => prev.map(u => (u.$id === userId ? { ...u, labels: [role] } : u)));
+  }, []);
+
+  const updateUserStatus = useCallback(async (userId: string, status: boolean): Promise<void> => {
+    setUsers(prev => prev.map(u => (u.$id === userId ? { ...u, status } : u)));
+  }, []);
+
+  // Memoize context value
   const contextValue = useMemo((): AccountContextType => ({
     // State
     currentUser,
-    users,
+    authUser,
+    userProfile,
     loading,
     error,
     
     // Auth methods
-    login: async (email: string, password: string): Promise<{ session: Models.Session; user: UserAccount }> => {
-      try {
-        setLoading(true);
-        const session = await account.createEmailPasswordSession(email, password);
-        const user = await getCurrentUser();
-        return { session, user };
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Login failed');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    register: async (userData: RegisterData) => {
-      try {
-        setLoading(true);
-        const { email, password, name, phone } = userData;
-        const accountData = await account.create(ID.unique(), email, password, name);
-        
-        // Create user document in database
-        const userDoc = await databases.createDocument(
-          ENV.DATABASE_ID,
-          ENV.COLLECTION_ID,
-          accountData.$id,
-          {
-            name,
-            email,
-            phone: phone || '',
-            status: true,
-            labels: ['CUSTOMER'],
-            address: '',
-            preferences: DEFAULT_PREFERENCES,
-            isEmailVerified: false,
-            isPhoneVerified: false,
-            lastLoginAt: new Date().toISOString()
-          }
-        );
-        
-        const user = parseUserData({ ...accountData, ...userDoc });
-        setCurrentUser(user);
-        return { accountData, user };
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Registration failed');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    logout: async () => {
-      try {
-        setLoading(true);
-        await account.deleteSession('current');
-        setCurrentUser(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Logout failed');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    getCurrentUser: async () => {
-      try {
-        setLoading(true);
-        const user = await account.get();
-        const userDoc = await databases.getDocument(
-          ENV.DATABASE_ID,
-          ENV.COLLECTION_ID,
-          user.$id
-        );
-        const parsedUser = parseUserData({ ...user, ...userDoc });
-        setCurrentUser(parsedUser);
-        return parsedUser;
-      } catch (err) {
-        setCurrentUser(null);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    getUserById,
-    updateUser: updateUser,
-    deleteUser: deleteUser,
-    listUsers,
-    searchUsers: searchUsers,
-    updatePassword: async (currentPassword: string, newPassword: string, userId?: string) => {
-      try {
-        setLoading(true);
-        if (userId) {
-          // Admin updating another user's password
-          await account.updatePassword(userId, newPassword);
-        } else {
-          // User updating their own password
-          await account.updatePassword(newPassword, currentPassword);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Password update failed');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    updateEmail: async (email: string, password: string) => {
-      try {
-        setLoading(true);
-        await account.updateEmail(email, password);
-        const user = await getCurrentUser();
-        return user;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Email update failed');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    verifyEmail: async (userId: string, secret: string) => {
-      try {
-        setLoading(true);
-        await account.updateVerification(userId, secret);
-        const user = await getCurrentUser();
-        return user;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Email verification failed');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
+    login,
+    register,
+    logout,
+    
+    // Profile management
+    getUserProfile,
+    updateProfile,
+    createProfile,
+    
+    // Address management
+    addAddress,
+    updateAddress,
+    removeAddress,
+    setDefaultAddress,
+    getShippingAddresses,
+    getBillingAddresses,
+    getDefaultShippingAddress,
+    
+    // Utility methods
+    refreshSession,
+    getCurrentUser,
+    
+    // Password management
     requestPasswordReset: async (email: string) => {
       try {
         setLoading(true);
@@ -543,13 +558,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
+    
     confirmPasswordReset: async (userId: string, secret: string, password: string, confirmPassword: string) => {
       try {
         if (password !== confirmPassword) {
           throw new Error('Passwords do not match');
         }
         setLoading(true);
-        await account.updateRecovery(userId, secret, password); // Only 3 args
+        await account.updateRecovery(userId, secret, password);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Password reset failed');
         throw err;
@@ -557,43 +573,75 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    updateProfile: async (updates: Partial<UserAccount>) => {
-      if (!currentUser) {
-        throw new Error('No user is currently logged in');
-      }
-      return updateUser(currentUser.$id, updates);
-    },
-    refreshSession: async () => {
+    
+    updatePassword: async (currentPassword: string, newPassword: string) => {
       try {
-        const session = await account.getSession('current');
-        if (session) {
-          const user = await getCurrentUser();
-          return { session, user };
-        }
-        return null;
+        setLoading(true);
+        await account.updatePassword(newPassword, currentPassword);
       } catch (err) {
-        setCurrentUser(null);
+        setError(err instanceof Error ? err.message : 'Password update failed');
         throw err;
+      } finally {
+        setLoading(false);
       }
     },
+    
+    updateEmail: async (email: string, password: string) => {
+      try {
+        setLoading(true);
+        await account.updateEmail(email, password);
+        const user = await getCurrentUser();
+        return user?.auth || authUser!;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Email update failed');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    
     sendVerificationEmail: async () => {
-      if (!currentUser) throw new Error('No user logged in');
+      if (!authUser) throw new Error('No user logged in');
       await account.createVerification(`${window.location.origin}/verify-email`);
     },
-    updateUserRole: async (userId: string, role: Labels) => {
-      // Add or remove role in labels
-      const user = await getUserById(userId);
-      if (!user) throw new Error('User not found');
-      let labels = user.labels;
-      if (!labels.includes(role)) {
-        labels = [...labels, role];
+    
+    verifyEmail: async (userId: string, secret: string) => {
+      try {
+        setLoading(true);
+        await account.updateVerification(userId, secret);
+        const user = await getCurrentUser();
+        return user?.auth || authUser!;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Email verification failed');
+        throw err;
+      } finally {
+        setLoading(false);
       }
-      await updateUser(userId, { labels } as Partial<UserAccount>);
     },
-    updateUserStatus: async (userId: string, status: boolean) => {
-      await updateUser(userId, { status } as Partial<UserAccount>);
-    }
-  }), [currentUser, users, loading, error, getCurrentUser, getUserById, updateUser, deleteUser, listUsers, searchUsers]);
+    
+    // Admin
+    users,
+    listUsers,
+    searchUsers,
+    updateUser,
+    deleteUser,
+    updateUserRole,
+    updateUserStatus,
+  }), [
+    currentUser, authUser, userProfile, loading, error,
+    login, register, logout, getUserProfile, updateProfile, createProfile,
+    addAddress, updateAddress, removeAddress, setDefaultAddress,
+    getShippingAddresses, getBillingAddresses, getDefaultShippingAddress,
+    refreshSession, getCurrentUser,
+    users, listUsers, searchUsers, updateUser, deleteUser, updateUserRole, updateUserStatus
+  ]);
+
+  // Auto-fetch user on mount
+  useEffect(() => {
+    getCurrentUser().catch(() => {
+      // Silent fail - user not logged in
+    });
+  }, [getCurrentUser]);
 
   return (
     <AccountContext.Provider value={contextValue}>
@@ -601,3 +649,23 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     </AccountContext.Provider>
   );
 }
+
+// ------------------------------
+// Admin User Management types
+// ------------------------------
+export type Labels = 'ADMIN' | 'MANAGER' | 'CUSTOMER';
+
+export interface UserAccount {
+  $id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  status: boolean; // Active / Inactive
+  isEmailVerified: boolean;
+  labels: Labels[];
+  createdAt?: string;
+  lastLoginAt?: string;
+}
+
+export type UpdateUserData = Partial<Omit<UserAccount, '$id'>>;

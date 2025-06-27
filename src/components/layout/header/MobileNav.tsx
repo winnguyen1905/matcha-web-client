@@ -31,12 +31,22 @@ const MobileNav: React.FC<MobileNavProps> = ({ handleNavigation }) => {
       <div className="border-t border-gray-100">
         {isAuthenticated && user ? (
           <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50/70">
-            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-bold text-lg">
+            <button
+              onClick={() => navigate('/profile')}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-bold text-lg hover:bg-emerald-200 transition-colors duration-200"
+              title="Go to Profile"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0v.75a.75.75 0 01-.75.75H5.25a.75.75 0 01-.75-.75v-.75z" />
               </svg>
-            </span>
-            <span className="text-emerald-900 font-medium text-sm max-w-[120px] truncate" title={user.name || user.email}>{user.name || user.email}</span>
+            </button>
+            <button
+              onClick={() => navigate('/profile')}
+              className="text-emerald-900 font-medium text-sm max-w-[120px] truncate hover:text-emerald-700 transition-colors duration-200"
+              title={user.name || user.email}
+            >
+              {user.name || user.email}
+            </button>
             <button
               onClick={logout}
               className="ml-auto px-4 py-1.5 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"

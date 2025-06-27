@@ -80,6 +80,7 @@ import {
   ShippingAddress,
   BillingAddress,
 } from '../../../lib/schema';
+import type { UserAccount } from '../../../hooks/Account';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -386,7 +387,7 @@ const AdminOrderPage: React.FC = () => {
   };
 
   const getUserName = (userId: string) => {
-    const user = users.find(u => u.$id === userId);
+    const user = users.find((u: UserAccount) => u.$id === userId);
     return user?.name || 'Unknown User';
   };
 
@@ -537,7 +538,7 @@ const AdminOrderPage: React.FC = () => {
                 onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
               >
                 <MenuItem value="">All Users</MenuItem>
-                {users.map(user => (
+                {users.map((user: UserAccount) => (
                   <MenuItem key={user.$id} value={user.$id}>
                     {user.name} ({user.email})
                   </MenuItem>
