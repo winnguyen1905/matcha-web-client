@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from './logo/Logo';
 import { DesktopNav } from './navigation/DesktopNav';
 import { MobileMenuButton } from './navigation/MobileMenuButton';
 import { MobileNav } from './navigation/MobileNav';
 import { useDesktopNavGsap, useMobileNavGsap } from '../../../hooks/useHeaderGsap';
 import { useUser } from '../../../hooks/useAccount';
 import { useAuth } from '../../../hooks/useAuth';
+import { Logo } from './logo';
 
 export const CustomerHeader = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
