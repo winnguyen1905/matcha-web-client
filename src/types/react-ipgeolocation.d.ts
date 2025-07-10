@@ -1,4 +1,4 @@
-declare module 'react-ipgeolocation' {
+declare module "react-ipgeolocation" {
   export interface IPGeoLocationResult {
     country: string | null;
     countryCode: string | null;
@@ -13,7 +13,7 @@ declare module 'react-ipgeolocation' {
     org: string | null;
     as: string | null;
     query: string | null;
-    status: 'pending' | 'success' | 'error';
+    status: "pending" | "success" | "error";
     error?: Error;
   }
 
