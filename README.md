@@ -114,9 +114,59 @@ Before you begin, ensure you have the following installed:
 
 ## Project Structure
 
+### Layout Architecture
 
+The project uses a clean, modular layout structure for better maintainability:
 
+```
+src/components/layout/
+├── layouts/                    # Main layout containers
+│   ├── AdminLayout.tsx         # Admin dashboard layout
+│   ├── CustomerLayout.tsx      # Customer-facing layout
+│   └── index.ts               # Layout exports
+│
+├── admin/                     # Admin-specific components
+│   ├── AdminHeader.tsx        # Admin header with search, notifications
+│   ├── AdminSidebar.tsx       # Collapsible admin sidebar
+│   ├── AdminMainContent.tsx   # Main content area wrapper
+│   └── index.ts              # Admin component exports
+│
+├── customer/                  # Customer-facing components
+│   ├── CustomerHeader.tsx     # Customer header with navigation
+│   ├── navigation/           # Navigation components
+│   │   ├── DesktopNav.tsx    # Desktop navigation menu
+│   │   ├── MobileNav.tsx     # Mobile navigation menu
+│   │   ├── MobileMenuButton.tsx  # Mobile menu toggle
+│   │   └── index.ts          # Navigation exports
+│   ├── logo/                 # Logo components
+│   │   ├── Logo.tsx          # Animated company logo
+│   │   └── index.ts          # Logo exports
+│   └── index.ts              # Customer component exports
+│
+├── shared/                   # Shared layout components
+│   ├── Footer.tsx            # Application footer
+│   └── index.ts              # Shared component exports
+│
+└── index.ts                  # Main layout exports
+```
 
+#### Key Features:
 
+- **Modular Structure**: Components are organized by domain (admin, customer, shared)
+- **Clean Imports**: Index files enable clean, short import statements
+- **Separation of Concerns**: Admin and customer layouts are completely separate
+- **Reusable Components**: Shared components for common elements
+- **Type Safety**: All components are properly typed with TypeScript
 
-using Taxjar for tax calculation 
+#### Usage Examples:
+
+```typescript
+// Clean imports from the layout system
+import { AdminLayout, CustomerLayout } from '../components/layout';
+import { Logo, DesktopNav } from '../components/layout/customer';
+import { Footer } from '../components/layout/shared';
+```
+
+### Tax Integration
+
+The application integrates with **TaxJar** for accurate tax calculation during checkout. 
