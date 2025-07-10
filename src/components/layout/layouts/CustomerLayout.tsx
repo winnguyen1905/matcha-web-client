@@ -1,9 +1,9 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { CustomerHeader } from '../customer/CustomerHeader';
-import { Footer } from '../shared/Footer';
 import FloatingActionMenu from '../../common/FloatingActionMenu';
 import Breadcrumb from '../../common/Breadcrumb';
+import { Footer } from '../shared';
 
 interface LayoutProps {
   children?: React.ReactNode;
