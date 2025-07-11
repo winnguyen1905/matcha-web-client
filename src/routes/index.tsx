@@ -44,7 +44,7 @@ const routes = [
   {
     path: '/admin',
     element: (
-      <ProtectedRoute element={<AdminLayout />} />
+      <ProtectedRoute element={<AdminLayout />} roles={['admin', 'manager']} />
     ),
     children: [
       ...adminRoutes,
