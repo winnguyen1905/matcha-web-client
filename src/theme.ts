@@ -30,10 +30,10 @@ export const lightTheme: Theme = createTheme({
       'Arial',
       'sans-serif',
     ].join(','),
-    fontWeightLight: 200,
+    fontWeightLight: 100,
     fontWeightRegular: 300,
-    fontWeightMedium: 400,
-    fontWeightBold: 500,
+    fontWeightMedium: 300,
+    fontWeightBold: 400,
   },
 });
 
@@ -65,10 +65,10 @@ export const darkTheme: Theme = createTheme({
       'Arial',
       'sans-serif',
     ].join(','),
-    fontWeightLight: 200,
+    fontWeightLight: 100,
     fontWeightRegular: 300,
-    fontWeightMedium: 400,
-    fontWeightBold: 500,
+    fontWeightMedium: 300,
+    fontWeightBold: 400,
   },
 });
 
