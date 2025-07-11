@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Star, MapPin, ShoppingCart } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Star, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../../constants';
 
 const FeaturedProducts = () => {
@@ -8,7 +8,7 @@ const FeaturedProducts = () => {
   const { title, description, products } = FEATURED_PRODUCTS;
   const navigate = useNavigate();
 
-  const itemsPerSlide = 3;
+  const itemsPerSlide = 4; // Changed to 4 for 2 rows x 2 columns
   const totalSlides = Math.ceil(products.length / itemsPerSlide);
 
   const nextSlide = () => {
@@ -33,6 +33,9 @@ const FeaturedProducts = () => {
       case 'PREMIUM': return 'bg-amber-600';
       case 'FEATURED': return 'bg-orange-600';
       case 'LIMITED': return 'bg-red-600';
+      case 'BEGINNER': return 'bg-teal-600';
+      case 'CLASSIC': return 'bg-gray-600';
+      case 'TERROIR': return 'bg-yellow-700';
       default: return 'bg-blue-600';
     }
   };
@@ -59,16 +62,14 @@ const FeaturedProducts = () => {
             >
               {Array.from({ length: totalSlides }).map((_, slideIndex) => (
                 <div key={slideIndex} className="w-full flex-shrink-0">
-                  <div className="grid md:grid-cols-3 gap-8 px-2">
+                  <div className="grid grid-cols-2 grid-rows-2 gap-3 md:gap-6 px-2">
                     {products
                       .slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide)
                       .map((product, index) => (
-                        <Link 
-                          to={`/products/${product.id}`}
+                        <div
                           key={product.id}
-                          className={`group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full ${
-                            index === 1 ? 'scale-105 z-10' : ''
-                          }`}
+                          onClick={() => navigate('/products')}
+                          className="group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full cursor-pointer"
                         >
                           {/* Badge */}
                           {product.badge && (
@@ -78,60 +79,44 @@ const FeaturedProducts = () => {
                           )}
                           
                           {/* Product Image */}
-                          <div className="relative h-64 overflow-hidden">
+                          <div className="relative h-40 md:h-48 overflow-hidden">
                             <img 
                               src={product.image} 
                               alt={product.name}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
-                            
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-                              <div className="w-full p-4 text-center">
-                                <button 
-                                  className="bg-white text-emerald-800 px-6 py-2 font-medium rounded-full hover:bg-emerald-50 transition-colors duration-200 flex items-center mx-auto"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    // Add to cart logic here
-                                  }}
-                                >
-                                  <ShoppingCart size={16} className="mr-2" />
-                                  ADD TO CART
-                                </button>
-                              </div>
-                            </div>
                           </div>
 
                           {/* Product Info */}
-                          <div className="p-5 flex-1 flex flex-col">
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">{product.name}</h3>
-                            <div className="flex items-center text-sm text-gray-500 mb-3">
-                              <MapPin size={14} className="mr-1" />
+                          <div className="p-2 md:p-4 flex-1 flex flex-col">
+                            <h3 className="text-xs md:text-sm font-bold text-gray-900 mb-1 leading-tight">{product.name}</h3>
+                            <div className="flex items-center text-xs text-gray-500 mb-2">
+                              <MapPin size={10} className="mr-1" />
                               {product.origin}
                             </div>
                             
                             {/* Rating */}
                             <div className="mt-auto flex items-center justify-between">
                               <div className="flex items-center">
-                                <div className="flex text-amber-400 mr-2">
+                                <div className="flex text-amber-400 mr-1">
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
-                                      size={16}
+                                      size={10}
                                       fill={i < Math.floor(product.rating) ? 'currentColor' : 'none'}
                                     />
                                   ))}
                                 </div>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-xs text-gray-500">
                                   ({product.reviews})
                                 </span>
                               </div>
-                              <span className="text-emerald-600 font-medium">
+                              <span className="text-xs text-emerald-600 font-medium">
                                 Contact Us
                               </span>
                             </div>
                           </div>
-                        </Link>
+                        </div>
                       ))}
                   </div>
                 </div>

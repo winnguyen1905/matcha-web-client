@@ -8,7 +8,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 // Tea Leaf SVG Component - More realistic and thinner design
-const TeaLeaf = ({ delay = 0, startX = 0, startY = 0, endX = 0, endY = 0, size = 20 }) => (
+const TeaLeaf = ({
+  delay = 0,
+  startX = 0,
+  startY = 0,
+  endX = 0,
+  endY = 0,
+  size = 20,
+}) => (
   <motion.svg
     width={size}
     height={size * 1.4} // Taller aspect ratio for realistic proportions
@@ -16,24 +23,24 @@ const TeaLeaf = ({ delay = 0, startX = 0, startY = 0, endX = 0, endY = 0, size =
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className="absolute text-green-500 drop-shadow-lg"
-    initial={{ 
-      x: startX, 
-      y: startY, 
-      opacity: 0, 
+    initial={{
+      x: startX,
+      y: startY,
+      opacity: 0,
       scale: 0,
-      rotate: 0 
+      rotate: 0,
     }}
-    animate={{ 
-      x: endX, 
-      y: endY, 
-      opacity: [0, 1, 1, 0.8, 0], 
+    animate={{
+      x: endX,
+      y: endY,
+      opacity: [0, 1, 1, 0.8, 0],
       scale: [0, 1.2, 1, 0.8, 0],
       rotate: [0, 180, 360, 540, 720],
       transition: {
         duration: 2.5,
         delay,
-        ease: "easeOut"
-      }
+        ease: "easeOut",
+      },
     }}
   >
     {/* Main leaf body - elongated and thinner */}
@@ -42,7 +49,7 @@ const TeaLeaf = ({ delay = 0, startX = 0, startY = 0, endX = 0, endY = 0, size =
       fill="currentColor"
       opacity="0.85"
     />
-    
+
     {/* Central vein */}
     <path
       d="M12 4L12 30"
@@ -50,7 +57,7 @@ const TeaLeaf = ({ delay = 0, startX = 0, startY = 0, endX = 0, endY = 0, size =
       strokeWidth="0.8"
       fill="none"
     />
-    
+
     {/* Side veins - left */}
     <path
       d="M12 8C10 9 9 11 8.5 13"
@@ -76,7 +83,7 @@ const TeaLeaf = ({ delay = 0, startX = 0, startY = 0, endX = 0, endY = 0, size =
       strokeWidth="0.6"
       fill="none"
     />
-    
+
     {/* Side veins - right */}
     <path
       d="M12 8C14 9 15 11 15.5 13"
@@ -102,7 +109,7 @@ const TeaLeaf = ({ delay = 0, startX = 0, startY = 0, endX = 0, endY = 0, size =
       strokeWidth="0.6"
       fill="none"
     />
-    
+
     {/* Subtle edge highlight */}
     <path
       d="M12 2C10.2 2 8.5 2.8 7.8 4.5c-1.3 2.7-1.4 6.5-1 10.5"
@@ -299,17 +306,17 @@ const Hero = () => {
             ease: "easeOut",
           }}
         >
-          <motion.h1
-            className="text-4xl md:text-6xl font-light mb-6 leading-tight"
+          <motion.h1 
+            className="text-2xl sm:text-4xl md:text-6xl font-light mb-4 sm:mb-6 leading-tight"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1, duration: 0.4 }}
           >
             {profile.title}
           </motion.h1>
-
-          <motion.p
-            className="text-lg md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed font-extralight"
+          
+          <motion.p 
+            className="text-sm sm:text-lg md:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed font-extralight"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
