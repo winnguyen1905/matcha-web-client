@@ -11,8 +11,8 @@ export const APP_TITLE1: string = "Quality Matcha, Better Everyday Moments";
 export const APP_TITLE2: string = "Upgrade Your At-Home Matcha";
 export const APP_DESCRIPTION: string = "The difference is in the details—vibrant color, smooth flavor, and clean energy. Start your day with matcha that makes every sip feel special.";
 export const APP_DESCRIPTION2: string = "Better matcha means better flavor, better energy, and a better start to your day";
-export const BACKGROUND_IMAGE1: string = "https://scontent.fsgn2-9.fna.fbcdn.net/v/t39.30808-6/506458211_122132615270725253_1651286809710190997_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=106&ccb=1-7&_nc_sid=127cfc&_nc_ohc=SrzhSauFgLkQ7kNvwFwfO1s&_nc_oc=Adm31Bt5m_6KMZd4ZbR8ept9_EOIRIvt7eygwzrUaZjnX90AjNHO6i2a-duR3DOBERM&_nc_zt=23&_nc_ht=scontent.fsgn2-9.fna&_nc_gid=d-kLeZ9P8FCJuivirry6Ng&oh=00_AfM19nswpzJQ3vGM5JgMYRkAUTtKSZNi0YGqkqX0ejbKSA&oe=68523867";
-export const BACKGROUND_IMAGE2: string = "https://scontent.fsgn2-10.fna.fbcdn.net/v/t39.30808-6/506468230_122132615432725253_2278882615411259411_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=ORITep6omwkQ7kNvwHbMZnF&_nc_oc=AdnJtMA_Fsu2TwCh8n6E8abCz4qcrnjWIDDN7r408XU8d__CHKE2-ggPNXcZ1DRuvHM&_nc_zt=23&_nc_ht=scontent.fsgn2-10.fna&_nc_gid=SESvmBwtbW1PeH9sfaXxlQ&oh=00_AfNFhbBpe4ZdauZ2-vZWk97Tgv6jGlxwIMVeZiNLlcbs3w&oe=68521DF8";
+export const BACKGROUND_IMAGE1: string = "https://fra.cloud.appwrite.io/v1/storage/buckets/685447fd0000f28d4ad2/files/6870de53002c10fc73c0/view?project=6853e4280039022d2b30&mode=admin";
+export const BACKGROUND_IMAGE2: string = "https://fra.cloud.appwrite.io/v1/storage/buckets/685447fd0000f28d4ad2/files/6870df2c0011d102be14/view?project=6853e4280039022d2b30&mode=admin";
 
 export const HERO_PROFILES: HeroProfiles = {
   profile1: {
