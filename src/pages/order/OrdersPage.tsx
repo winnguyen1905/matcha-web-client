@@ -91,12 +91,15 @@ const OrdersPage: React.FC = () => {
   /* ----------------------------- Filtering ------------------------------ */
   const filteredOrders = orders.filter((o) => {
     if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
-    if (paymentFilter !== "ALL" && o.paymentMethod !== paymentFilter) return false;
+    if (paymentFilter !== "ALL" && o.paymentMethod !== paymentFilter)
+      return false;
     if (startDate && new Date(o.createdAt) < new Date(startDate)) return false;
     if (endDate && new Date(o.createdAt) > new Date(endDate)) return false;
     if (
       discountSearch &&
-      !(o.discountCode || "").toLowerCase().includes(discountSearch.toLowerCase())
+      !(o.discountCode || "")
+        .toLowerCase()
+        .includes(discountSearch.toLowerCase())
     )
       return false;
     return true;
@@ -125,43 +128,63 @@ const OrdersPage: React.FC = () => {
         </div>
 
         {/* Filter bar */}
-        <FilterBar
-          statusFilter={statusFilter}
-          setStatusFilter={(v) => setStatusFilter(v as StatusFilter)}
-          paymentFilter={paymentFilter}
-          setPaymentFilter={(v) => setPaymentFilter(v as PaymentFilter)}
-          startDate={startDate}
-          setStartDate={setStartDate}
-          endDate={endDate}
-          setEndDate={setEndDate}
-          discountSearch={discountSearch}
-          setDiscountSearch={setDiscountSearch}
-          onReset={() => {
-            setStatusFilter("ALL");
-            setPaymentFilter("ALL");
-            setStartDate("");
-            setEndDate("");
-            setDiscountSearch("");
-          }}
-        />
+        <div className="mb-8">
+          <FilterBar
+            statusFilter={statusFilter}
+            setStatusFilter={(v) => setStatusFilter(v as StatusFilter)}
+            paymentFilter={paymentFilter}
+            setPaymentFilter={(v) => setPaymentFilter(v as PaymentFilter)}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            discountSearch={discountSearch}
+            setDiscountSearch={setDiscountSearch}
+            onReset={() => {
+              setStatusFilter("ALL");
+              setPaymentFilter("ALL");
+              setStartDate("");
+              setEndDate("");
+              setDiscountSearch("");
+            }}
+          />
+        </div>
 
         {/* ----------------------- Loading / empty state --------------------- */}
         {ordersLoading && (
-          <div className="mt-12 flex flex-col items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-            <p className="text-lg font-medium text-gray-600">Loading orders...</p>
+          <div className="mt-12 flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-200 border-b-emerald-600 mb-6"></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-100/30 to-emerald-50/50 backdrop-blur-sm"></div>
+            </div>
+            <p className="text-xl font-semibold text-gray-700 animate-pulse">
+              Loading your orders...
+            </p>
           </div>
         )}
         {!ordersLoading && orders.length === 0 && (
-          <div className="mt-12 flex flex-col items-center justify-center py-16 text-center">
-            <div className="rounded-full bg-gray-100 p-6 mb-4">
-              <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          <div className="mt-12 flex flex-col items-center justify-center py-20 text-center">
+            <div className="rounded-3xl bg-gradient-to-br from-emerald-100 via-emerald-50 to-white p-8 mb-6 shadow-xl ring-1 ring-emerald-200/50 backdrop-blur-sm">
+              <svg
+                className="h-16 w-16 text-emerald-400 mx-auto"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No orders yet</h3>
-            <p className="text-gray-600 max-w-md">
-              You haven&apos;t placed any orders yet. Start shopping to see your orders here.
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">
+              No orders yet
+            </h3>
+            <p className="text-gray-600 max-w-md text-lg">
+              You haven&apos;t placed any orders yet. Start shopping to see your
+              orders here.
             </p>
           </div>
         )}
@@ -170,137 +193,153 @@ const OrdersPage: React.FC = () => {
         {!ordersLoading && orders.length > 0 && (
           <div className="mb-6 flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              {filteredOrders.length === orders.length 
+              {filteredOrders.length === orders.length
                 ? `Showing all ${orders.length} orders`
-                : `Showing ${filteredOrders.length} of ${orders.length} orders`
-              }
+                : `Showing ${filteredOrders.length} of ${orders.length} orders`}
             </p>
           </div>
         )}
 
         {/* ---------------------------- Table ------------------------------- */}
         {!ordersLoading && filteredOrders.length > 0 && (
-          <div className="mt-10 overflow-x-auto rounded-2xl shadow-2xl ring-1 ring-gray-100">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-emerald-600/95 text-white">
-                <tr>
-                  <Th>Order</Th>
-                  <Th className="hidden sm:table-cell">Date</Th>
-                  <Th>Status</Th>
-                  <Th alignRight>Subtotal</Th>
-                  <Th alignRight className="hidden md:table-cell">
-                    Tax
-                  </Th>
-                  <Th alignRight className="hidden md:table-cell">
-                    Shipping
-                  </Th>
-                  <Th alignRight className="hidden lg:table-cell">
-                    Discount
-                  </Th>
-                  <Th alignRight>Total</Th>
-                  <Th className="text-center">Actions</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {filteredOrders.map((order, idx) => (
-                  <tr
-                    key={order.$id}
-                    className={`${idx % 2 ? "bg-gray-50" : "bg-white"} hover:bg-emerald-50/50 transition-colors`}
-                  >
-                    {/* Order code */}
-                    <Td>
-                      <Link
-                        to={`/orders/${order.$id}`}
-                        className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
-                      >
-                        {order.orderCode}
-                      </Link>
-                    </Td>
-
-                    {/* Date */}
-                    <Td className="hidden sm:table-cell">
-                      {format(new Date(order.createdAt), "PPpp")}
-                    </Td>
-
-                    {/* Status */}
-                    <Td>
-                      <span
-                        className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${statusColorMap[
-                          order.status as StatusFilter
-                        ]}`}
-                      >
-                        {order.status}
-                      </span>
-                    </Td>
-
-                    {/* Subtotal */}
-                    <Td alignRight>
-                      {currencyFormatter.format(order.subtotal)}
-                    </Td>
-
-                    {/* Tax */}
-                    <Td alignRight className="hidden md:table-cell">
-                      {currencyFormatter.format(order.taxAmount)}
-                    </Td>
-
-                    {/* Shipping */}
-                    <Td alignRight className="hidden md:table-cell">
-                      {currencyFormatter.format(order.shippingAmount)}
-                    </Td>
-
-                    {/* Discount */}
-                    <Td alignRight className="hidden lg:table-cell">
-                      {order.discountTotal
-                        ? `- ${currencyFormatter.format(order.discountTotal)}`
-                        : "-"}
-                      {order.discountCode && (
-                        <span className="ml-1 text-xs text-gray-500">
-                          ({order.discountCode})
-                        </span>
-                      )}
-                    </Td>
-
-                    {/* Total */}
-                    <Td alignRight>
-                      <span className="font-semibold text-emerald-700">
-                        {currencyFormatter.format(order.finalPrice)}
-                      </span>
-                    </Td>
-
-                    {/* Actions */}
-                    <Td className="text-center">
-                      {["PENDING", "PROCESSING"].includes(order.status) ? (
-                        <button
-                          onClick={() => handleCancelOrder(order.$id)}
-                          disabled={loadingOrderId === order.$id}
-                          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                        >
-                          {loadingOrderId === order.$id
-                            ? "Cancelling..."
-                            : "Cancel"}
-                        </button>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </Td>
+          <div className="mt-10 overflow-hidden rounded-3xl shadow-2xl ring-1 ring-emerald-200/50 bg-gradient-to-br from-white via-emerald-50/30 to-white backdrop-blur-sm">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-emerald-200/70">
+                <thead className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-600 text-white">
+                  <tr>
+                    <Th>Order</Th>
+                    <Th className="hidden sm:table-cell">Date</Th>
+                    <Th>Status</Th>
+                    <Th alignRight>Subtotal</Th>
+                    <Th alignRight className="hidden md:table-cell">
+                      Tax
+                    </Th>
+                    <Th alignRight className="hidden md:table-cell">
+                      Shipping
+                    </Th>
+                    <Th alignRight className="hidden lg:table-cell">
+                      Discount
+                    </Th>
+                    <Th alignRight>Total</Th>
+                    <Th className="text-center">Actions</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-emerald-100/60 bg-white/60 backdrop-blur-sm">
+                  {filteredOrders.map((order, idx) => (
+                    <tr
+                      key={order.$id}
+                      className={`${
+                        idx % 2 ? "bg-emerald-50/30" : "bg-white/80"
+                      } hover:bg-emerald-100/50 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-4 border-l-transparent hover:border-l-emerald-400`}
+                    >
+                      {/* Order code */}
+                      <Td>
+                        <Link
+                          to={`/orders/${order.$id}`}
+                          className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
+                        >
+                          {order.orderCode}
+                        </Link>
+                      </Td>
+
+                      {/* Date */}
+                      <Td className="hidden sm:table-cell">
+                        {format(new Date(order.createdAt), "PPpp")}
+                      </Td>
+
+                      {/* Status */}
+                      <Td>
+                        <span
+                          className={`inline-flex items-center justify-center rounded-2xl px-3 py-1.5 text-xs font-bold shadow-sm ring-1 ring-white/20 backdrop-blur-sm ${
+                            statusColorMap[order.status as StatusFilter]
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+                      </Td>
+
+                      {/* Subtotal */}
+                      <Td alignRight>
+                        {currencyFormatter.format(order.subtotal)}
+                      </Td>
+
+                      {/* Tax */}
+                      <Td alignRight className="hidden md:table-cell">
+                        {currencyFormatter.format(order.taxAmount)}
+                      </Td>
+
+                      {/* Shipping */}
+                      <Td alignRight className="hidden md:table-cell">
+                        {currencyFormatter.format(order.shippingAmount)}
+                      </Td>
+
+                      {/* Discount */}
+                      <Td alignRight className="hidden lg:table-cell">
+                        {order.discountTotal
+                          ? `- ${currencyFormatter.format(order.discountTotal)}`
+                          : "-"}
+                        {order.discountCode && (
+                          <span className="ml-1 text-xs text-gray-500">
+                            ({order.discountCode})
+                          </span>
+                        )}
+                      </Td>
+
+                      {/* Total */}
+                      <Td alignRight>
+                        <span className="font-semibold text-emerald-700">
+                          {currencyFormatter.format(order.finalPrice)}
+                        </span>
+                      </Td>
+
+                      {/* Actions */}
+                      <Td className="text-center">
+                        {["PENDING", "PROCESSING"].includes(order.status) ? (
+                          <button
+                            onClick={() => handleCancelOrder(order.$id)}
+                            disabled={loadingOrderId === order.$id}
+                            className="rounded-2xl px-4 py-2 text-sm font-bold text-red-600 bg-red-50/80 hover:bg-red-100 hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all duration-200 ring-1 ring-red-200/50 backdrop-blur-sm"
+                          >
+                            {loadingOrderId === order.$id
+                              ? "Cancelling..."
+                              : "Cancel"}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {/* No results after filtering */}
         {!ordersLoading && orders.length > 0 && filteredOrders.length === 0 && (
-          <div className="mt-12 flex flex-col items-center justify-center py-16 text-center">
-            <div className="rounded-full bg-gray-100 p-6 mb-4">
-              <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <div className="mt-12 flex flex-col items-center justify-center py-20 text-center">
+            <div className="rounded-3xl bg-gradient-to-br from-orange-100 via-orange-50 to-white p-8 mb-6 shadow-xl ring-1 ring-orange-200/50 backdrop-blur-sm">
+              <svg
+                className="h-16 w-16 text-orange-400 mx-auto"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No matching orders</h3>
-            <p className="text-gray-600 mb-4">
-              No orders match your current filter criteria. Try adjusting your filters.
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">
+              No matching orders
+            </h3>
+            <p className="text-gray-600 mb-6 text-lg max-w-lg">
+              No orders match your current filter criteria. Try adjusting your
+              filters to see more results.
             </p>
           </div>
         )}
@@ -312,15 +351,10 @@ const OrdersPage: React.FC = () => {
 /* -------------------------------------------------------------------------- */
 /*                    Tiny helper table header / cell comps                   */
 /* -------------------------------------------------------------------------- */
-interface ThProps
-  extends React.HTMLAttributes<HTMLTableCellElement> {
+interface ThProps extends React.HTMLAttributes<HTMLTableCellElement> {
   alignRight?: boolean;
 }
-const Th: React.FC<ThProps> = ({
-  children,
-  className = "",
-  alignRight,
-}) => (
+const Th: React.FC<ThProps> = ({ children, className = "", alignRight }) => (
   <th
     className={`px-4 py-3 text-xs font-bold uppercase tracking-wider ${
       alignRight ? "text-right" : "text-left"
@@ -330,15 +364,10 @@ const Th: React.FC<ThProps> = ({
   </th>
 );
 
-interface TdProps
-  extends React.HTMLAttributes<HTMLTableCellElement> {
+interface TdProps extends React.HTMLAttributes<HTMLTableCellElement> {
   alignRight?: boolean;
 }
-const Td: React.FC<TdProps> = ({
-  children,
-  className = "",
-  alignRight,
-}) => (
+const Td: React.FC<TdProps> = ({ children, className = "", alignRight }) => (
   <td
     className={`px-4 py-3 text-sm ${
       alignRight ? "text-right" : "text-left"

@@ -82,22 +82,22 @@ const OrderSuccessPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full mb-4">
-              <FaCheck className="text-2xl text-green-600 dark:text-green-400" />
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-100 dark:bg-green-900 rounded-3xl mb-6 shadow-2xl ring-4 ring-green-200/50 backdrop-blur-sm hover:scale-110 transition-all duration-300">
+              <FaCheck className="text-4xl text-green-600 dark:text-green-400" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
               Order Confirmed!
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-6 font-medium">
               Thank you for your order. Order #{order.orderCode}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-white via-emerald-50/20 to-white dark:bg-gray-800 rounded-3xl shadow-2xl p-10 ring-2 ring-emerald-200/50 backdrop-blur-sm hover:shadow-3xl transition-all duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                   Order Details
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -123,7 +123,7 @@ const OrderSuccessPage: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                   Payment & Delivery
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -142,16 +142,16 @@ const OrderSuccessPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="text-center mt-8 space-x-4">
+          <div className="text-center mt-12 space-x-6">
             <Link
               to="/orders"
-              className="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center px-8 py-4 border-2 border-emerald-300 text-emerald-700 font-bold rounded-2xl hover:bg-emerald-50 hover:shadow-xl hover:scale-105 transition-all duration-300 backdrop-blur-sm ring-1 ring-emerald-200/50"
             >
               View All Orders
             </Link>
             <Link
               to="/products"
-              className="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-2xl hover:from-green-700 hover:to-emerald-700 hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg"
             >
               Continue Shopping
             </Link>

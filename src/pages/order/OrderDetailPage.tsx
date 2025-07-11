@@ -130,70 +130,77 @@ const OrderDetailPage: React.FC = () => {
         {copied && <span className="text-sm text-green-600 animate-pulse">Copied!</span>}
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8 overflow-x-auto ring-1 ring-gray-100">
-        <h2 className="text-xl font-semibold mb-4">Items</h2>
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Product</th>
-              <th className="px-4 py-2 text-left whitespace-nowrap">Variant</th>
-              <th className="px-4 py-2 text-right whitespace-nowrap">Qty</th>
-              <th className="px-4 py-2 text-right whitespace-nowrap">Unit Price</th>
-              <th className="px-4 py-2 text-right whitespace-nowrap">Discount</th>
-              <th className="px-4 py-2 text-right whitespace-nowrap">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.$id} className="border-t hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-2 whitespace-nowrap">
-                  <Link
-                    to={`/products/${item.productId}`}
-                    className="text-green-700 hover:text-green-900 hover:underline font-medium"
-                  >
-                    {item.productName || item.productId}
-                  </Link>
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap">{item.variantName || '-'}</td>
-                <td className="px-4 py-2 text-right whitespace-nowrap">{item.quantity}</td>
-                <td className="px-4 py-2 text-right whitespace-nowrap">{currency.format(item.unitPrice)}</td>
-                <td className="px-4 py-2 text-right whitespace-nowrap">{currency.format(item.discountAmount)}</td>
-                <td className="px-4 py-2 text-right whitespace-nowrap font-semibold">{currency.format(item.total)}</td>
+      <div className="bg-gradient-to-br from-white via-emerald-50/20 to-white rounded-3xl shadow-2xl p-8 mb-10 overflow-hidden ring-2 ring-emerald-200/50 backdrop-blur-sm">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Items</h2>
+        <div className="overflow-x-auto rounded-2xl">
+          <table className="min-w-full table-auto">
+            <thead className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-600 text-white">
+              <tr>
+                <th className="px-6 py-4 text-left whitespace-nowrap font-bold">Product</th>
+                <th className="px-6 py-4 text-left whitespace-nowrap font-bold">Variant</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap font-bold">Qty</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap font-bold">Unit Price</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap font-bold">Discount</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap font-bold">Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-emerald-100/60 bg-white/60 backdrop-blur-sm">
+              {items.map((item) => (
+                <tr key={item.$id} className="hover:bg-emerald-50/50 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-4 border-l-transparent hover:border-l-emerald-400">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Link
+                      to={`/products/${item.productId}`}
+                      className="text-emerald-700 hover:text-emerald-900 hover:underline font-bold text-base transition-colors"
+                    >
+                      {item.productName || item.productId}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-700">{item.variantName || '-'}</td>
+                  <td className="px-6 py-4 text-right whitespace-nowrap font-bold text-gray-800">{item.quantity}</td>
+                  <td className="px-6 py-4 text-right whitespace-nowrap font-semibold text-gray-700">{currency.format(item.unitPrice)}</td>
+                  <td className="px-6 py-4 text-right whitespace-nowrap font-semibold text-red-600">{currency.format(item.discountAmount)}</td>
+                  <td className="px-6 py-4 text-right whitespace-nowrap font-bold text-emerald-700 text-lg">{currency.format(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Summary card */}
-      <div className="bg-white rounded-xl shadow-lg p-6 space-y-3 max-w-md ring-1 ring-gray-100">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Subtotal</span>
-          <span>{currency.format(order.subtotal)}</span>
+      <div className="bg-gradient-to-br from-white via-emerald-50/30 to-white rounded-3xl shadow-2xl p-8 space-y-4 max-w-lg ring-2 ring-emerald-200/50 backdrop-blur-sm hover:shadow-3xl transition-all duration-300">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Order Summary</h3>
+        <div className="flex justify-between py-2">
+          <span className="text-gray-600 font-medium">Subtotal</span>
+          <span className="font-semibold text-gray-800">{currency.format(order.subtotal)}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Tax</span>
-          <span>{currency.format(order.taxAmount)}</span>
+        <div className="flex justify-between py-2">
+          <span className="text-gray-600 font-medium">Tax</span>
+          <span className="font-semibold text-gray-800">{currency.format(order.taxAmount)}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Shipping</span>
-          <span>{currency.format(order.shippingAmount)}</span>
+        <div className="flex justify-between py-2">
+          <span className="text-gray-600 font-medium">Shipping</span>
+          <span className="font-semibold text-gray-800">{currency.format(order.shippingAmount)}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Discount</span>
-          <span>-{currency.format(order.discountTotal)} {order.discountCode ? `(${order.discountCode})` : ''}</span>
+        <div className="flex justify-between py-2">
+          <span className="text-gray-600 font-medium">Discount</span>
+          <span className="font-semibold text-red-600">-{currency.format(order.discountTotal)} {order.discountCode ? (
+            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full ml-1">
+              {order.discountCode}
+            </span>
+          ) : ''}</span>
         </div>
-        <div className="flex justify-between font-semibold pt-2 border-t">
-          <span>Total</span>
-          <span>{currency.format(order.finalPrice)}</span>
+        <div className="flex justify-between font-bold pt-4 border-t-2 border-emerald-200/50 text-lg">
+          <span className="text-gray-800">Total</span>
+          <span className="text-emerald-700">{currency.format(order.finalPrice)}</span>
         </div>
       </div>
 
       {/* Order details & addresses */}
-      <div className="grid lg:grid-cols-3 gap-6 mt-10">
+      <div className="grid lg:grid-cols-3 gap-8 mt-12">
         {/* Order meta */}
-        <div className="bg-white rounded-xl shadow-lg ring-1 ring-gray-100 p-6 space-y-3">
-          <h3 className="text-lg font-semibold mb-2">Order Details</h3>
+        <div className="bg-gradient-to-br from-white via-blue-50/20 to-white rounded-3xl shadow-2xl ring-2 ring-blue-200/50 backdrop-blur-sm p-8 space-y-4 hover:shadow-3xl transition-all duration-300">
+          <h3 className="text-xl font-bold mb-4 text-gray-800">Order Details</h3>
           <div className="text-sm flex justify-between"><span>Status</span><span className="font-medium">{order.status}</span></div>
           <div className="text-sm flex justify-between"><span>Payment</span><span className="font-medium capitalize">{order.paymentMethod.toLowerCase()}</span></div>
           <div className="text-sm flex justify-between"><span>Payment Status</span><span className="font-medium">{order.paymentStatus}</span></div>
@@ -208,8 +215,8 @@ const OrderDetailPage: React.FC = () => {
 
         {/* Shipping address */}
         {shippingAddress && (
-          <div className="bg-white rounded-xl shadow-lg ring-1 ring-gray-100 p-6 space-y-1">
-            <h3 className="text-lg font-semibold mb-2">Shipping Address</h3>
+          <div className="bg-gradient-to-br from-white via-green-50/20 to-white rounded-3xl shadow-2xl ring-2 ring-green-200/50 backdrop-blur-sm p-8 space-y-2 hover:shadow-3xl transition-all duration-300">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Shipping Address</h3>
             <div className="text-sm">{shippingAddress.fullName}</div>
             <div className="text-sm">{shippingAddress.phone}</div>
             <div className="text-sm">{shippingAddress.address}</div>
@@ -220,8 +227,8 @@ const OrderDetailPage: React.FC = () => {
 
         {/* Billing address */}
         {billingAddress && (
-          <div className="bg-white rounded-xl shadow-lg ring-1 ring-gray-100 p-6 space-y-1">
-            <h3 className="text-lg font-semibold mb-2">Billing Address</h3>
+          <div className="bg-gradient-to-br from-white via-purple-50/20 to-white rounded-3xl shadow-2xl ring-2 ring-purple-200/50 backdrop-blur-sm p-8 space-y-2 hover:shadow-3xl transition-all duration-300">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Billing Address</h3>
             {order.billingAddress?.sameAsShipping ? (
               <div className="text-sm text-gray-500">Same as shipping</div>
             ) : (

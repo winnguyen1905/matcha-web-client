@@ -36,17 +36,17 @@ const FilterBar: React.FC<Props> = (p) => {
     (p.discountSearch ? 1 : 0);
 
   return (
-    <div className="relative mb-8 rounded-2xl bg-white/80 shadow-xl ring-1 ring-emerald-200/50 backdrop-blur-sm transition-all duration-300">
+    <div className="relative mb-8 rounded-3xl bg-gradient-to-br from-white via-emerald-50/20 to-white shadow-2xl ring-1 ring-emerald-200/60 backdrop-blur-lg transition-all duration-500 hover:shadow-3xl hover:ring-emerald-300/70">
       {/* Header with toggle */}
-      <div className="flex items-center justify-between gap-3 p-6 pb-4">
+      <div className="flex items-center justify-between gap-3 p-8 pb-6">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-lg font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
+          className="flex items-center gap-3 text-xl font-bold text-emerald-700 hover:text-emerald-800 transition-all duration-300 hover:scale-105"
         >
           <HiAdjustments className="h-5 w-5" />
           Filters
           {activeCount > 0 && (
-            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-600/90 px-2 text-xs font-bold text-white">
+            <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 text-xs font-extrabold text-white shadow-lg ring-2 ring-white/50 animate-pulse">
               {activeCount}
             </span>
           )}
@@ -57,11 +57,11 @@ const FilterBar: React.FC<Props> = (p) => {
           )}
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {activeCount > 0 && (
             <button
               onClick={p.onReset}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-gray-600 bg-gray-100/80 hover:bg-red-100 hover:text-red-600 hover:shadow-lg hover:scale-105 transition-all duration-300 ring-1 ring-gray-200/50 backdrop-blur-sm"
             >
               <HiRefresh className="h-4 w-4" /> 
               Reset
@@ -71,19 +71,19 @@ const FilterBar: React.FC<Props> = (p) => {
       </div>
 
       {/* Collapsible filter content */}
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-        isExpanded ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'
+      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
+        isExpanded ? 'max-h-[500px] opacity-100 pb-8' : 'max-h-0 opacity-0'
       }`}>
-        <div className="px-6">
+        <div className="px-8">
           {/* Filter grid */}
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {/* STATUS */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-700">Status</label>
+            <div className="flex flex-col gap-3">
+              <label className="text-sm font-bold text-gray-800">Status</label>
               <select
                 value={p.statusFilter}
                 onChange={(e) => p.setStatusFilter(e.target.value)}
-                className="rounded-lg border-gray-300 bg-white/90 text-sm shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all"
+                className="rounded-2xl border-emerald-200/60 bg-white/95 text-sm shadow-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-400/30 transition-all duration-300 hover:shadow-xl hover:scale-105 backdrop-blur-sm ring-1 ring-emerald-100/50 py-3 px-4 font-medium"
               >
                 {[
                   "ALL",
@@ -100,15 +100,15 @@ const FilterBar: React.FC<Props> = (p) => {
             </div>
 
             {/* PAYMENT */}
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-1 text-sm font-semibold text-gray-700">
-                <HiCreditCard className="h-4 w-4" />
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                <HiCreditCard className="h-5 w-5 text-emerald-600" />
                 Payment
               </label>
               <select
                 value={p.paymentFilter}
                 onChange={(e) => p.setPaymentFilter(e.target.value)}
-                className="rounded-lg border-gray-300 bg-white/90 text-sm shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all"
+                className="rounded-2xl border-emerald-200/60 bg-white/95 text-sm shadow-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-400/30 transition-all duration-300 hover:shadow-xl hover:scale-105 backdrop-blur-sm ring-1 ring-emerald-100/50 py-3 px-4 font-medium"
               >
                 {["ALL", "COD", "ONLINE"].map((v) => (
                   <option key={v} value={v}>{v}</option>
@@ -117,37 +117,37 @@ const FilterBar: React.FC<Props> = (p) => {
             </div>
 
             {/* FROM */}
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-1 text-sm font-semibold text-gray-700">
-                <HiCalendar className="h-4 w-4" />
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                <HiCalendar className="h-5 w-5 text-emerald-600" />
                 From
               </label>
               <input
                 type="date"
                 value={p.startDate}
                 onChange={(e) => p.setStartDate(e.target.value)}
-                className="rounded-lg border-gray-300 bg-white/90 text-sm shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all"
+                className="rounded-2xl border-emerald-200/60 bg-white/95 text-sm shadow-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-400/30 transition-all duration-300 hover:shadow-xl hover:scale-105 backdrop-blur-sm ring-1 ring-emerald-100/50 py-3 px-4 font-medium"
               />
             </div>
 
             {/* TO */}
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-1 text-sm font-semibold text-gray-700">
-                <HiCalendar className="h-4 w-4" />
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                <HiCalendar className="h-5 w-5 text-emerald-600" />
                 To
               </label>
               <input
                 type="date"
                 value={p.endDate}
                 onChange={(e) => p.setEndDate(e.target.value)}
-                className="rounded-lg border-gray-300 bg-white/90 text-sm shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all"
+                className="rounded-2xl border-emerald-200/60 bg-white/95 text-sm shadow-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-400/30 transition-all duration-300 hover:shadow-xl hover:scale-105 backdrop-blur-sm ring-1 ring-emerald-100/50 py-3 px-4 font-medium"
               />
             </div>
 
             {/* DISCOUNT */}
-            <div className="flex flex-col gap-2 lg:col-span-2 xl:col-span-1">
-              <label className="flex items-center gap-1 text-sm font-semibold text-gray-700">
-                <HiSearch className="h-4 w-4" />
+            <div className="flex flex-col gap-3 lg:col-span-2 xl:col-span-1">
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                <HiSearch className="h-5 w-5 text-emerald-600" />
                 Discount Code
               </label>
               <div className="relative">
@@ -156,15 +156,15 @@ const FilterBar: React.FC<Props> = (p) => {
                   placeholder="Search discount code..."
                   value={p.discountSearch}
                   onChange={(e) => p.setDiscountSearch(e.target.value)}
-                  className="w-full rounded-lg border-gray-300 bg-white/90 pl-9 pr-9 text-sm shadow-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all"
+                  className="w-full rounded-2xl border-emerald-200/60 bg-white/95 pl-12 pr-12 py-3 text-sm shadow-lg focus:border-emerald-500 focus:ring-4 focus:ring-emerald-400/30 transition-all duration-300 hover:shadow-xl hover:scale-105 backdrop-blur-sm ring-1 ring-emerald-100/50 font-medium"
                 />
-                <HiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <HiSearch className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-400" />
                 {p.discountSearch && (
                   <button
                     onClick={() => p.setDiscountSearch("")}
-                    className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                    className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 hover:text-red-500 hover:scale-110 transition-all duration-200 rounded-full hover:bg-red-50"
                   >
-                    <HiX className="h-4 w-4" />
+                    <HiX className="h-5 w-5" />
                   </button>
                 )}
               </div>
@@ -173,8 +173,8 @@ const FilterBar: React.FC<Props> = (p) => {
 
           {/* Active filter chips */}
           {activeCount > 0 && (
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2">
+            <div className="mt-8 pt-6 border-t border-emerald-200/50">
+              <div className="flex flex-wrap gap-3">
                 {p.statusFilter !== "ALL" && (
                   <Chip
                     text={`Status: ${p.statusFilter}`}
@@ -218,13 +218,13 @@ export default FilterBar;
 
 /* ---------------------- Chip sub-component --------------------- */
 const Chip = ({ text, onClear }: { text: string; onClear: () => void }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+  <span className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-100 via-emerald-50 to-emerald-100 px-4 py-2.5 text-sm font-bold text-emerald-800 ring-2 ring-emerald-200/70 shadow-lg backdrop-blur-sm hover:shadow-xl hover:scale-105 transition-all duration-300">
     {text}
     <button
       onClick={onClear}
-      className="flex items-center justify-center h-4 w-4 rounded-full hover:bg-emerald-200 transition-colors"
+      className="flex items-center justify-center h-5 w-5 rounded-full bg-red-100 hover:bg-red-200 hover:scale-110 transition-all duration-200 ring-1 ring-red-200"
     >
-      <HiX className="h-3 w-3 hover:text-red-600" />
+      <HiX className="h-3 w-3 text-red-600 hover:text-red-700" />
     </button>
   </span>
 );
