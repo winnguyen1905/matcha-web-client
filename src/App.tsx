@@ -15,6 +15,7 @@ import { lightTheme } from "./theme";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AccountProvider } from "./hooks/Account";
 import { DiscountsProvider } from "./hooks/Discount";
+import ScrollToTop from "./components/common/ScrollToTop";
 
 const App: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const App: React.FC = () => {
         <CssBaseline />
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <BrowserRouter>
+            <ScrollToTop />
             <AuthProvider>
               <UserProvider>
                 <NotificationProvider>
