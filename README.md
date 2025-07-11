@@ -1,3 +1,79 @@
+# Matcha A Hiếu - Frontend
+
+A modern React-based e-commerce frontend for the Matcha A Hiếu tea store.
+
+## Recent Updates
+
+### Professional Admin Dashboard
+The admin dashboard has been enhanced with comprehensive analytics and professional charts:
+
+#### 📊 Key Features
+- **Real-time Statistics**: Revenue, orders, products, and user metrics with growth indicators
+- **Interactive Charts**: Built with Recharts library for smooth, responsive visualizations
+- **Data Integration**: Seamlessly connected to Product, Order, Discount, and Account hooks
+- **Professional UI**: Material-UI components with hover animations and gradient styling
+
+#### 📈 Dashboard Sections
+
+1. **Key Metrics Cards**
+   - Total Revenue with growth percentage
+   - Total Orders with trend indicators  
+   - Product count and active users
+   - Average order value calculation
+
+2. **Revenue & Orders Trend** 
+   - 12-month area chart showing revenue progression
+   - Dual-axis visualization for revenue and order volume
+   - Gradient fills and smooth animations
+
+3. **Order Status Distribution**
+   - Pie chart showing completed, pending, processing, and cancelled orders
+   - Color-coded status indicators
+   - Real-time data from order management system
+
+4. **Best Selling Products**
+   - Horizontal bar chart of top 8 products by sales volume
+   - Product performance comparison
+   - Revenue metrics per product
+
+5. **Discount Usage Analytics**
+   - Line chart showing customer savings trends
+   - 6-month discount utilization data
+   - Usage frequency and impact analysis
+
+6. **Recent Activity Feed**
+   - Real-time system updates
+   - Order notifications and user registrations
+   - Product inventory changes
+   - Discount code usage alerts
+
+7. **Quick Actions Panel**
+   - One-click access to common admin tasks
+   - Product management shortcuts
+   - User and order management links
+   - Average order value display
+
+#### 🎨 Technical Implementation
+- **Hooks Integration**: Leverages existing Product, Order, Discount, and Account hooks
+- **State Management**: Efficient loading states and error handling
+- **Responsive Design**: Mobile-friendly charts and layouts
+- **Performance**: Optimized data fetching and chart rendering
+- **Type Safety**: Full TypeScript support with proper interfaces
+
+#### 🔧 Dependencies Used
+- `recharts`: Professional chart library for React
+- `@mui/material`: Material-UI components and theming
+- `lucide-react`: Modern icon library
+- Custom hooks for data management
+
+#### 📱 Responsive Features
+- Mobile-optimized chart containers
+- Adaptive grid layouts
+- Touch-friendly interactions
+- Scalable typography and spacing
+
+The dashboard provides administrators with comprehensive insights into business performance, customer behavior, and operational metrics through beautiful, interactive visualizations.
+
 # Sencha
 
 ![image](https://github.com/user-attachments/assets/8722024c-1666-4002-bc30-19304e134fee)
