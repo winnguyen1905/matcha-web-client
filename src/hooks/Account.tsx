@@ -15,6 +15,7 @@ import {
 // Environment variables
 const ENV = {
   DATABASE_ID: import.meta.env.VITE_APPWRITE_DATABASE_ID || '',
+  ACCOUNTS_COLLECTION_ID: import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || 'accounts',
 } as const;
 
 // Simplified Auth User (from Appwrite)
@@ -116,6 +117,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserAccount[]>([]);
+   const ACCOUNT_DATABASE_ID = import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || "";
 
   // Get user profile by ID
   const getUserProfile = useCallback(async (userId?: string): Promise<UserInformation | null> => {
@@ -462,15 +464,27 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      /*
-       * TODO: Replace this stub with real implementation, e.g. Appwrite Team SDK
-       * Example:
-       *   const response = await users.list();
-       *   setUsers(response.users as unknown as UserAccount[]);
-       */
-
-      // Temporary placeholder: keep current list untouched
-      setUsers(prev => prev);
+      // Query the accounts collection from Appwrite database
+      const response = await databases.listDocuments(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS
+      );
+      
+      // Map database documents to UserAccount interface
+      const userAccounts: UserAccount[] = response.documents.map((doc): UserAccount => ({
+        $id: doc.$id,
+        name: doc.name || doc.fullName || 'Unknown User',
+        email: doc.email,
+        phone: doc.phone,
+        address: doc.address,
+        status: doc.status ?? true,
+        isEmailVerified: doc.isEmailVerified ?? false,
+        labels: Array.isArray(doc.labels) ? doc.labels : ['CUSTOMER'],
+        createdAt: doc.$createdAt || doc.createdAt,
+        lastLoginAt: doc.lastLoginAt,
+      }));
+      
+      setUsers(userAccounts);
     } catch (err) {
       console.error('Failed to list users:', err);
       setError('Failed to fetch users');
@@ -480,39 +494,170 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const searchUsers = useCallback(async (query: string): Promise<void> => {
-    // Placeholder – for now just refetch full list
-    await listUsers();
-    // Optionally, filter client-side if needed
-    if (query && users.length) {
-      try {
-        const lowered = query.toLowerCase();
-        const filtered = users.filter(u =>
-          u.name.toLowerCase().includes(lowered) || u.email.toLowerCase().includes(lowered)
-        );
-        setUsers(filtered);
-      } catch (err) {
-        console.error('Failed to search users:', err);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!query.trim()) {
+        await listUsers();
+        return;
       }
+      
+      // Build Appwrite queries for different search types
+      const queries: string[] = [];
+      
+      // Handle specific filter queries from UI chips
+      if (query.includes('status.equal(true)')) {
+        queries.push(Query.equal('status', true));
+      } else if (query.includes('status.equal(false)')) {
+        queries.push(Query.equal('status', false));
+      } else if (query.includes('isEmailVerified.equal(true)')) {
+        queries.push(Query.equal('isEmailVerified', true));
+      } else if (query.includes('isEmailVerified.equal(false)')) {
+        queries.push(Query.equal('isEmailVerified', false));
+      } else if (query.includes('labels.contains("ADMIN")')) {
+        queries.push(Query.contains('labels', 'ADMIN'));
+      } else if (query.includes('labels.contains("MANAGER")')) {
+        queries.push(Query.contains('labels', 'MANAGER'));
+      } else if (query.includes('labels.contains("CUSTOMER")')) {
+        queries.push(Query.contains('labels', 'CUSTOMER'));
+      } else {
+        // Text search in name and email
+        queries.push(Query.search('name', query));
+        // Note: Appwrite doesn't support OR queries easily, so we'll search name first
+        // In a production app, you might want to do separate queries and combine results
+      }
+      
+      const response = await databases.listDocuments(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        queries
+      );
+      
+      // Map database documents to UserAccount interface
+      const userAccounts: UserAccount[] = response.documents.map((doc): UserAccount => ({
+        $id: doc.$id,
+        name: doc.name || doc.fullName || 'Unknown User',
+        email: doc.email,
+        phone: doc.phone,
+        address: doc.address,
+        status: doc.status ?? true,
+        isEmailVerified: doc.isEmailVerified ?? false,
+        labels: Array.isArray(doc.labels) ? doc.labels : ['CUSTOMER'],
+        createdAt: doc.$createdAt || doc.createdAt,
+        lastLoginAt: doc.lastLoginAt,
+      }));
+      
+      setUsers(userAccounts);
+    } catch (err) {
+      console.error('Failed to search users:', err);
+      setError('Failed to search users');
+      // Fall back to full list on error
+      await listUsers();
+    } finally {
+      setLoading(false);
     }
-  }, [listUsers, users]);
+  }, [listUsers]);
 
   const updateUser = useCallback(async (userId: string, data: UpdateUserData): Promise<void> => {
-    // TODO: integrate with backend – currently update local state only
-    setUsers(prev => prev.map(u => (u.$id === userId ? { ...u, ...data } : u)));
-  }, []);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update user in database
+      await databases.updateDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        userId,
+        data
+      );
+      
+      // Refresh the user list to reflect changes
+      await listUsers();
+    } catch (err) {
+      console.error('Failed to update user:', err);
+      setError('Failed to update user');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [listUsers]);
 
   const deleteUser = useCallback(async (userId: string): Promise<void> => {
-    // TODO: backend delete
-    setUsers(prev => prev.filter(u => u.$id !== userId));
-  }, []);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Prevent deleting current user
+      if (userId === authUser?.$id) {
+        throw new Error('Cannot delete your own account');
+      }
+      
+      // Delete user from database
+      await databases.deleteDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        userId
+      );
+      
+      // Refresh the user list to reflect changes
+      await listUsers();
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+      setError('Failed to delete user');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [authUser?.$id, listUsers]);
 
   const updateUserRole = useCallback(async (userId: string, role: Labels): Promise<void> => {
-    setUsers(prev => prev.map(u => (u.$id === userId ? { ...u, labels: [role] } : u)));
-  }, []);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update user role in database
+      await databases.updateDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        userId,
+        { labels: [role] }
+      );
+      
+      // Refresh the user list to reflect changes
+      await listUsers();
+    } catch (err) {
+      console.error('Failed to update user role:', err);
+      setError('Failed to update user role');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [listUsers]);
 
   const updateUserStatus = useCallback(async (userId: string, status: boolean): Promise<void> => {
-    setUsers(prev => prev.map(u => (u.$id === userId ? { ...u, status } : u)));
-  }, []);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update user status in database
+      await databases.updateDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        userId,
+        { status }
+      );
+      
+      // Refresh the user list to reflect changes
+      await listUsers();
+    } catch (err) {
+      console.error('Failed to update user status:', err);
+      setError('Failed to update user status');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [listUsers]);
 
   // Memoize context value
   const contextValue = useMemo((): AccountContextType => ({

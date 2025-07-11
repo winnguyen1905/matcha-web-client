@@ -270,7 +270,7 @@ const UsersPage: React.FC = () => {
             color="error"
             variant="outlined"
           />
-          <Chip 
+          <Chip
             label={`Verified (${accountStats.verified})`}
             onClick={() => searchUsers('isEmailVerified.equal(true)')}
             color="warning"
@@ -404,10 +404,10 @@ const UsersPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {new Date(user.$createdAt).toLocaleDateString()}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                     </Typography>
                     <Typography variant="caption" color="textSecondary">
-                      {new Date(user.$createdAt).toLocaleTimeString()}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleTimeString() : ''}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -470,15 +470,15 @@ const UsersPage: React.FC = () => {
                     Created Date
                   </Typography>
                   <Typography variant="body2">
-                    {selectedUser?.$createdAt ? new Date(selectedUser.$createdAt).toLocaleString() : 'N/A'}
+                    {selectedUser?.createdAt ? new Date(selectedUser.createdAt).toLocaleString() : 'N/A'}
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="textSecondary">
-                    Last Updated
+                    Last Login
                   </Typography>
                   <Typography variant="body2">
-                    {selectedUser?.$updatedAt ? new Date(selectedUser.$updatedAt).toLocaleString() : 'N/A'}
+                    {selectedUser?.lastLoginAt ? new Date(selectedUser.lastLoginAt).toLocaleString() : 'Never'}
                   </Typography>
                 </Box>
                 <Box>
