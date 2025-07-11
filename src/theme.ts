@@ -19,12 +19,21 @@ export const lightTheme: Theme = createTheme({
   },
   typography: {
     fontFamily: [
+      'Nunito Sans',
+      'Source Sans Pro',
+      'Work Sans',
       'Inter',
-      'Roboto',
-      'Helvetica',
+      '-apple-system',
+      'BlinkMacSystemFont',
+      'Segoe UI',
+      'Helvetica Neue',
       'Arial',
       'sans-serif',
     ].join(','),
+    fontWeightLight: 200,
+    fontWeightRegular: 300,
+    fontWeightMedium: 400,
+    fontWeightBold: 500,
   },
 });
 
@@ -45,12 +54,21 @@ export const darkTheme: Theme = createTheme({
   },
   typography: {
     fontFamily: [
+      'Nunito Sans',
+      'Source Sans Pro',
+      'Work Sans',
       'Inter',
-      'Roboto',
-      'Helvetica',
+      '-apple-system',
+      'BlinkMacSystemFont',
+      'Segoe UI',
+      'Helvetica Neue',
       'Arial',
       'sans-serif',
     ].join(','),
+    fontWeightLight: 200,
+    fontWeightRegular: 300,
+    fontWeightMedium: 400,
+    fontWeightBold: 500,
   },
 });
 
