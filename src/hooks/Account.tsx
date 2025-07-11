@@ -85,6 +85,8 @@ interface AccountContextType {
   deleteUser: (userId: string) => Promise<void>;
   updateUserRole: (userId: string, role: Labels) => Promise<void>;
   updateUserStatus: (userId: string, status: boolean) => Promise<void>;
+  verifyUserEmail: (userId: string) => Promise<void>;
+  sendUserVerificationEmail: (userId: string) => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -117,7 +119,6 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserAccount[]>([]);
-   const ACCOUNT_DATABASE_ID = import.meta.env.VITE_APPWRITE_ACCOUNTS_COLLECTION_ID || "";
 
   // Get user profile by ID
   const getUserProfile = useCallback(async (userId?: string): Promise<UserInformation | null> => {
@@ -339,6 +340,20 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       // Create session
       const session = await account.createEmailPasswordSession(email, password);
       
+      // Update last login time in accounts collection
+      try {
+        const authUserData = await account.get();
+        await databases.updateDocument(
+          ENV.DATABASE_ID,
+          COLLECTIONS.ACCOUNTS,
+          authUserData.$id,
+          { lastLoginAt: new Date().toISOString() }
+        );
+      } catch (updateError) {
+        console.warn('Failed to update last login time:', updateError);
+        // Continue even if update fails
+      }
+      
       // Get user data
       const user = await getCurrentUser();
       if (!user) throw new Error('Failed to get user after login');
@@ -371,6 +386,25 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       
       // Create Appwrite account
       const accountData = await account.create(ID.unique(), email, password, fullName);
+      
+      // Create record in accounts collection
+      const accountRecord = {
+        name: fullName,
+        email: email,
+        phone: phone || '',
+        status: true,
+        isEmailVerified: false,
+        labels: ['CUSTOMER'],
+        createdAt: new Date().toISOString(),
+        lastLoginAt: null,
+      };
+      
+      await databases.createDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        accountData.$id, // Use same ID as Auth user
+        accountRecord
+      );
       
       // Create user profile
       const profileData: CreateUserInformation = {
@@ -564,13 +598,60 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       
-      // Update user in database
+      // Update user in accounts collection
       await databases.updateDocument(
         ENV.DATABASE_ID,
         COLLECTIONS.ACCOUNTS,
         userId,
         data
       );
+      
+      // If updating current user, also update Auth service
+      if (userId === authUser?.$id) {
+        try {
+          // Update name in Auth if provided
+          if (data.name && data.name !== authUser.name) {
+            await account.updateName(data.name);
+          }
+          
+          // Update email in Auth if provided (requires current password in production)
+          if (data.email && data.email !== authUser.email) {
+            // Note: In production, you'd need the user's current password
+            // await account.updateEmail(data.email, currentPassword);
+            console.warn('Email update in Auth requires current password');
+          }
+          
+          // Update phone in Auth if provided
+          if (data.phone !== undefined && data.phone !== authUser.phone) {
+            await account.updatePhone(data.phone || '', ''); // Second param is password, empty for now
+          }
+          
+          // Update preferences/labels in Auth
+          if (data.labels) {
+            const currentPrefs = authUser.prefs || {};
+            await account.updatePrefs({
+              ...currentPrefs,
+              labels: data.labels,
+              role: data.labels[0] || 'CUSTOMER'
+            });
+          }
+          
+          // Update status in preferences
+          if (data.status !== undefined) {
+            const currentPrefs = authUser.prefs || {};
+            await account.updatePrefs({
+              ...currentPrefs,
+              isActive: data.status
+            });
+          }
+          
+          // Refresh current user data
+          await getCurrentUser();
+        } catch (authError) {
+          console.warn('Failed to update Auth service:', authError);
+          // Continue even if Auth update fails
+        }
+      }
       
       // Refresh the user list to reflect changes
       await listUsers();
@@ -581,7 +662,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [listUsers]);
+  }, [listUsers, authUser, account, getCurrentUser]);
 
   const deleteUser = useCallback(async (userId: string): Promise<void> => {
     try {
@@ -593,12 +674,36 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Cannot delete your own account');
       }
       
-      // Delete user from database
+      // Delete user from accounts collection
       await databases.deleteDocument(
         ENV.DATABASE_ID,
         COLLECTIONS.ACCOUNTS,
         userId
       );
+      
+      // Also delete user profile if exists
+      try {
+        const profileResponse = await databases.listDocuments(
+          ENV.DATABASE_ID,
+          COLLECTIONS.USER_INFORMATION,
+          [Query.equal('userId', userId)]
+        );
+        
+        if (profileResponse.documents.length > 0) {
+          await databases.deleteDocument(
+            ENV.DATABASE_ID,
+            COLLECTIONS.USER_INFORMATION,
+            profileResponse.documents[0].$id
+          );
+        }
+      } catch (profileError) {
+        console.warn('Failed to delete user profile:', profileError);
+        // Continue even if profile deletion fails
+      }
+      
+      // Note: Deleting from Appwrite Auth requires server-side admin SDK
+      // This would typically be done through an admin API endpoint
+      console.info(`User ${userId} removed from collections. Auth user deletion requires admin API.`);
       
       // Refresh the user list to reflect changes
       await listUsers();
@@ -616,13 +721,30 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       
-      // Update user role in database
+      // Update user role in accounts collection
       await databases.updateDocument(
         ENV.DATABASE_ID,
         COLLECTIONS.ACCOUNTS,
         userId,
         { labels: [role] }
       );
+      
+      // If updating current user, also update Auth preferences
+      if (userId === authUser?.$id) {
+        try {
+          const currentPrefs = authUser.prefs || {};
+          await account.updatePrefs({
+            ...currentPrefs,
+            labels: [role],
+            role: role
+          });
+          
+          // Refresh current user data
+          await getCurrentUser();
+        } catch (authError) {
+          console.warn('Failed to update Auth preferences for role:', authError);
+        }
+      }
       
       // Refresh the user list to reflect changes
       await listUsers();
@@ -633,20 +755,44 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [listUsers]);
+  }, [listUsers, authUser, account, getCurrentUser]);
 
   const updateUserStatus = useCallback(async (userId: string, status: boolean): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
       
-      // Update user status in database
+      // Update user status in accounts collection
       await databases.updateDocument(
         ENV.DATABASE_ID,
         COLLECTIONS.ACCOUNTS,
         userId,
         { status }
       );
+      
+      // If updating current user, also update Auth preferences
+      if (userId === authUser?.$id) {
+        try {
+          const currentPrefs = authUser.prefs || {};
+          await account.updatePrefs({
+            ...currentPrefs,
+            isActive: status,
+            accountStatus: status ? 'active' : 'inactive'
+          });
+          
+          // If disabling current user's account, logout
+          if (!status) {
+            console.warn('Current user account has been disabled');
+            await logout();
+            return;
+          }
+          
+          // Refresh current user data
+          await getCurrentUser();
+        } catch (authError) {
+          console.warn('Failed to update Auth preferences for status:', authError);
+        }
+      }
       
       // Refresh the user list to reflect changes
       await listUsers();
@@ -657,7 +803,94 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [listUsers]);
+  }, [listUsers, authUser, account, getCurrentUser, logout]);
+
+  const verifyUserEmail = useCallback(async (userId: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update email verification status in accounts collection
+      await databases.updateDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        userId,
+        { isEmailVerified: true }
+      );
+      
+      // If verifying current user's email, also update Auth service
+      if (userId === authUser?.$id) {
+        try {
+          // For current user, we can send verification email or mark as verified
+          const currentPrefs = authUser.prefs || {};
+          await account.updatePrefs({
+            ...currentPrefs,
+            emailVerified: true,
+            verifiedAt: new Date().toISOString()
+          });
+          
+          // Refresh current user data
+          await getCurrentUser();
+        } catch (authError) {
+          console.warn('Failed to update Auth verification status:', authError);
+        }
+      }
+      
+      // Refresh the user list to reflect changes
+      await listUsers();
+    } catch (err) {
+      console.error('Failed to verify user email:', err);
+      setError('Failed to verify user email');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [listUsers, authUser, account, getCurrentUser]);
+
+  const sendUserVerificationEmail = useCallback(async (userId: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // If sending to current user, use Auth service
+      if (userId === authUser?.$id) {
+        await account.createVerification(`${window.location.origin}/verify-email`);
+        
+        // Update database to track verification attempt
+        await databases.updateDocument(
+          ENV.DATABASE_ID,
+          COLLECTIONS.ACCOUNTS,
+          userId,
+          { 
+            verificationEmailSent: true,
+            verificationEmailSentAt: new Date().toISOString()
+          }
+        );
+      } else {
+        // For other users, just update database 
+        // (sending email to other users requires admin API)
+        await databases.updateDocument(
+          ENV.DATABASE_ID,
+          COLLECTIONS.ACCOUNTS,
+          userId,
+          { 
+            verificationEmailRequested: true,
+            verificationEmailRequestedAt: new Date().toISOString()
+          }
+        );
+        console.info(`Verification email request logged for user ${userId}. Actual sending requires admin API.`);
+      }
+      
+      // Refresh the user list to reflect changes
+      await listUsers();
+    } catch (err) {
+      console.error('Failed to send verification email:', err);
+      setError('Failed to send verification email');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [listUsers, authUser, account]);
 
   // Memoize context value
   const contextValue = useMemo((): AccountContextType => ({
@@ -772,13 +1005,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     deleteUser,
     updateUserRole,
     updateUserStatus,
+    verifyUserEmail,
+    sendUserVerificationEmail,
   }), [
     currentUser, authUser, userProfile, loading, error,
     login, register, logout, getUserProfile, updateProfile, createProfile,
     addAddress, updateAddress, removeAddress, setDefaultAddress,
     getShippingAddresses, getBillingAddresses, getDefaultShippingAddress,
     refreshSession, getCurrentUser,
-    users, listUsers, searchUsers, updateUser, deleteUser, updateUserRole, updateUserStatus
+    users, listUsers, searchUsers, updateUser, deleteUser, updateUserRole, updateUserStatus, verifyUserEmail, sendUserVerificationEmail
   ]);
 
   // Auto-fetch user on mount

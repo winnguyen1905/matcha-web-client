@@ -32,6 +32,7 @@ import {
   Select,
   Switch,
   FormControlLabel,
+  Snackbar,
 } from '@mui/material';
 import { 
   Search, 
@@ -66,6 +67,15 @@ const UsersPage: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<UpdateUserData>({});
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'warning' | 'info';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   // Load users on component mount
   useEffect(() => {
@@ -112,27 +122,65 @@ const UsersPage: React.FC = () => {
   const handleEditUser = () => {
     if (selectedUser) {
       setEditFormData({
-        name: selectedUser.name,
-        email: selectedUser.email,
-        phone: selectedUser.phone,
-        address: selectedUser.address,
+        name: selectedUser.name || '',
+        email: selectedUser.email || '',
+        phone: selectedUser.phone || '',
+        address: selectedUser.address || '',
         status: selectedUser.status,
-        labels: selectedUser.labels,
+        labels: selectedUser.labels || ['CUSTOMER'],
+        isEmailVerified: selectedUser.isEmailVerified,
       });
       setEditDialogOpen(true);
     }
     handleMenuClose();
   };
 
+  const showNotification = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
   const handleUpdateUser = async () => {
     if (selectedUser && editFormData) {
       try {
-        await updateUser(selectedUser.$id, editFormData);
+        // Validate required fields
+        if (!editFormData.name?.trim()) {
+          showNotification('Name is required', 'error');
+          return;
+        }
+        if (!editFormData.email?.trim()) {
+          showNotification('Email is required', 'error');
+          return;
+        }
+
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(editFormData.email.trim())) {
+          showNotification('Please enter a valid email address', 'error');
+          return;
+        }
+
+        // Prepare update data
+        const updateData: UpdateUserData = {
+          name: editFormData.name.trim(),
+          email: editFormData.email.trim(),
+          phone: editFormData.phone?.trim() || '',
+          address: editFormData.address?.trim() || '',
+          status: editFormData.status ?? true,
+          labels: editFormData.labels || ['CUSTOMER'],
+          isEmailVerified: editFormData.isEmailVerified ?? false,
+        };
+
+        await updateUser(selectedUser.$id, updateData);
         setEditDialogOpen(false);
         setEditFormData({});
-        await loadUsers();
+        showNotification(`User "${updateData.name}" updated successfully!`, 'success');
       } catch (error) {
         console.error('Failed to update user:', error);
+        showNotification('Failed to update user. Please try again.', 'error');
       }
     }
   };
@@ -142,9 +190,10 @@ const UsersPage: React.FC = () => {
       try {
         await deleteUser(selectedUser.$id);
         setDeleteDialogOpen(false);
-        await loadUsers();
+        showNotification(`User "${selectedUser.name}" deleted successfully!`, 'success');
       } catch (error) {
         console.error('Failed to delete user:', error);
+        showNotification('Failed to delete user. Please try again.', 'error');
       }
     }
   };
@@ -152,9 +201,11 @@ const UsersPage: React.FC = () => {
   const handleToggleStatus = async (user: UserAccount) => {
     try {
       await updateUserStatus(user.$id, !user.status);
-      await loadUsers();
+      const action = !user.status ? 'activated' : 'deactivated';
+      showNotification(`User "${user.name}" ${action} successfully!`, 'success');
     } catch (error) {
       console.error('Failed to update user status:', error);
+      showNotification('Failed to update user status. Please try again.', 'error');
     }
   };
 
@@ -506,12 +557,28 @@ const UsersPage: React.FC = () => {
               value={editFormData.name || ''}
               onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
               fullWidth
+              required
+              error={!editFormData.name?.trim()}
+              helperText={!editFormData.name?.trim() ? 'Name is required' : undefined}
             />
             <TextField
               label="Email"
+              type="email"
               value={editFormData.email || ''}
               onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
               fullWidth
+              required
+              error={(() => {
+                const email = editFormData.email?.trim();
+                return !email || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+              })()}
+              helperText={
+                !editFormData.email?.trim() 
+                  ? 'Email is required' 
+                  : (editFormData.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email.trim()))
+                    ? 'Please enter a valid email address'
+                    : undefined
+              }
             />
             <TextField
               label="Phone"
@@ -545,7 +612,7 @@ const UsersPage: React.FC = () => {
             <FormControlLabel
               control={
                 <Switch
-                  checked={editFormData.status || false}
+                  checked={editFormData.status ?? true}
                   onChange={(e) => setEditFormData({ 
                     ...editFormData, 
                     status: e.target.checked 
@@ -554,12 +621,35 @@ const UsersPage: React.FC = () => {
               }
               label="Active Status"
             />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={editFormData.isEmailVerified ?? false}
+                  onChange={(e) => setEditFormData({ 
+                    ...editFormData, 
+                    isEmailVerified: e.target.checked 
+                  })}
+                />
+              }
+              label="Email Verified"
+            />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUpdateUser} variant="contained">
-            Update User
+          <Button 
+            onClick={() => {
+              setEditDialogOpen(false);
+              setEditFormData({});
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleUpdateUser} 
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? 'Updating...' : 'Update User'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -627,6 +717,22 @@ const UsersPage: React.FC = () => {
           <ListItemText>Delete</ListItemText>
         </MenuItem>
       </Menu>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={() => setNotification({ ...notification, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setNotification({ ...notification, open: false })} 
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
