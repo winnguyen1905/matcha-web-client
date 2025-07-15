@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAccount, UserAccount, UpdateUserData, Labels } from '../../../hooks/Account';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAccount, UserAccount, UpdateUserData, Labels, CreateUserAccountData, SearchFilters } from '../../../hooks/Account';
 import {
   Box,
   Typography,
@@ -33,6 +33,11 @@ import {
   Switch,
   FormControlLabel,
   Snackbar,
+  Collapse,
+  Divider,
+  Grid,
+  Autocomplete,
+  Tooltip,
 } from '@mui/material';
 import { 
   Search, 
@@ -42,7 +47,12 @@ import {
   Block, 
   CheckCircle,
   Refresh,
-  Add
+  Add,
+  FilterList,
+  Clear,
+  ExpandMore,
+  ExpandLess,
+  CalendarToday
 } from '@mui/icons-material';
 import { green, red, orange, blue } from '@mui/material/colors';
 
@@ -53,6 +63,7 @@ const UsersPage: React.FC = () => {
     error, 
     listUsers, 
     searchUsers, 
+    createUserAccount,
     updateUser, 
     deleteUser, 
     updateUserRole, 
@@ -62,11 +73,24 @@ const UsersPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<SearchFilters>({});
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<UserAccount | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<UpdateUserData>({});
+  const [createFormData, setCreateFormData] = useState<CreateUserAccountData>({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    address: '',
+    labels: ['CUSTOMER'],
+    status: true,
+    isEmailVerified: false,
+  });
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -77,28 +101,57 @@ const UsersPage: React.FC = () => {
     severity: 'success',
   });
 
-  // Load users on component mount
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  // Search users when search term changes
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const query = `name.contains("${searchTerm}") || email.contains("${searchTerm}")`;
-      searchUsers(query);
-    } else {
-      loadUsers();
-    }
-  }, [searchTerm]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       await listUsers();
     } catch (error) {
       console.error('Failed to load users:', error);
     }
-  };
+  }, [listUsers]);
+
+  // Load users on component mount
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  // Debounced search function
+  const performSearch = useCallback(async () => {
+    try {
+      if (searchTerm.trim() || Object.keys(activeFilters).length > 0) {
+        const filters: SearchFilters = {
+          ...activeFilters,
+          searchText: searchTerm.trim() || undefined,
+        };
+        
+        // Remove undefined values
+        const cleanFilters: SearchFilters = {};
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== '' && value !== 'ALL') {
+            cleanFilters[key as keyof SearchFilters] = value as any;
+          }
+        });
+        
+        if (Object.keys(cleanFilters).length > 0) {
+          await searchUsers(cleanFilters);
+        } else {
+          await loadUsers();
+        }
+      } else {
+        await loadUsers();
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+  }, [searchTerm, activeFilters, searchUsers, loadUsers]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      performSearch();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [performSearch]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -141,6 +194,54 @@ const UsersPage: React.FC = () => {
       message,
       severity,
     });
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      // Validate required fields
+      if (!createFormData.name.trim()) {
+        showNotification('Name is required', 'error');
+        return;
+      }
+      if (!createFormData.email.trim()) {
+        showNotification('Email is required', 'error');
+        return;
+      }
+      if (!createFormData.password.trim()) {
+        showNotification('Password is required', 'error');
+        return;
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(createFormData.email.trim())) {
+        showNotification('Please enter a valid email address', 'error');
+        return;
+      }
+
+      // Password validation
+      if (createFormData.password.length < 8) {
+        showNotification('Password must be at least 8 characters long', 'error');
+        return;
+      }
+
+      await createUserAccount(createFormData);
+      setCreateDialogOpen(false);
+      setCreateFormData({
+        name: '',
+        email: '',
+        password: '',
+        phone: '',
+        address: '',
+        labels: ['CUSTOMER'],
+        status: true,
+        isEmailVerified: false,
+      });
+      showNotification(`User "${createFormData.name}" created successfully!`, 'success');
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      showNotification('Failed to create user. Please try again.', 'error');
+    }
   };
 
   const handleUpdateUser = async () => {
@@ -254,7 +355,15 @@ const UsersPage: React.FC = () => {
         <Typography variant="h4" component="h1">
           Users Management
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => setCreateDialogOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            Create Account
+          </Button>
           <IconButton onClick={loadUsers} disabled={loading}>
             <Refresh />
           </IconButton>
@@ -299,59 +408,231 @@ const UsersPage: React.FC = () => {
 
       {/* Quick Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Quick Filters
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">
+            Quick Filters
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
+              onClick={() => setFiltersOpen(!filtersOpen)}
+            >
+              Advanced Filters
+            </Button>
+            {Object.keys(activeFilters).length > 0 && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Clear />}
+                onClick={() => {
+                  setActiveFilters({});
+                  setSearchTerm('');
+                }}
+                color="error"
+              >
+                Clear All
+              </Button>
+            )}
+          </Box>
+        </Box>
+        
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Chip 
             label={`All (${accountStats.total})`}
-            onClick={() => loadUsers()}
+            onClick={() => {
+              setActiveFilters({});
+              setSearchTerm('');
+            }}
             color="primary"
-            variant="outlined"
+            variant={Object.keys(activeFilters).length === 0 ? "filled" : "outlined"}
           />
           <Chip 
             label={`Active (${accountStats.active})`}
-            onClick={() => searchUsers('status.equal(true)')}
+            onClick={() => setActiveFilters({ status: true })}
             color="success"
-            variant="outlined"
+            variant={activeFilters.status === true ? "filled" : "outlined"}
           />
           <Chip 
             label={`Inactive (${accountStats.inactive})`}
-            onClick={() => searchUsers('status.equal(false)')}
+            onClick={() => setActiveFilters({ status: false })}
             color="error"
-            variant="outlined"
+            variant={activeFilters.status === false ? "filled" : "outlined"}
           />
           <Chip
             label={`Verified (${accountStats.verified})`}
-            onClick={() => searchUsers('isEmailVerified.equal(true)')}
+            onClick={() => setActiveFilters({ isEmailVerified: true })}
             color="warning"
-            variant="outlined"
+            variant={activeFilters.isEmailVerified === true ? "filled" : "outlined"}
           />
           <Chip 
             label={`Unverified (${accountStats.unverified})`}
-            onClick={() => searchUsers('isEmailVerified.equal(false)')}
+            onClick={() => setActiveFilters({ isEmailVerified: false })}
             color="default"
-            variant="outlined"
+            variant={activeFilters.isEmailVerified === false ? "filled" : "outlined"}
           />
           <Chip 
             label={`Admins (${accountStats.admins})`}
-            onClick={() => searchUsers('labels.contains("ADMIN")')}
+            onClick={() => setActiveFilters({ role: 'ADMIN' })}
             color="error"
-            variant="outlined"
+            variant={activeFilters.role === 'ADMIN' ? "filled" : "outlined"}
           />
           <Chip 
             label={`Managers (${accountStats.managers})`}
-            onClick={() => searchUsers('labels.contains("MANAGER")')}
+            onClick={() => setActiveFilters({ role: 'MANAGER' })}
             color="warning"
-            variant="outlined"
+            variant={activeFilters.role === 'MANAGER' ? "filled" : "outlined"}
           />
           <Chip 
             label={`Customers (${accountStats.customers})`}
-            onClick={() => searchUsers('labels.contains("CUSTOMER")')}
+            onClick={() => setActiveFilters({ role: 'CUSTOMER' })}
             color="primary"
-            variant="outlined"
+            variant={activeFilters.role === 'CUSTOMER' ? "filled" : "outlined"}
           />
         </Box>
+
+        {/* Advanced Filters Panel */}
+        <Collapse in={filtersOpen}>
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="subtitle2" gutterBottom>
+            Advanced Search Options
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={activeFilters.status === undefined ? 'ALL' : activeFilters.status.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setActiveFilters(prev => ({
+                      ...prev,
+                      status: value === 'ALL' ? undefined : value === 'true'
+                    }));
+                  }}
+                  label="Status"
+                >
+                  <MenuItem value="ALL">All Status</MenuItem>
+                  <MenuItem value="true">Active Only</MenuItem>
+                  <MenuItem value="false">Inactive Only</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Email Status</InputLabel>
+                <Select
+                  value={activeFilters.isEmailVerified === undefined ? 'ALL' : activeFilters.isEmailVerified.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setActiveFilters(prev => ({
+                      ...prev,
+                      isEmailVerified: value === 'ALL' ? undefined : value === 'true'
+                    }));
+                  }}
+                  label="Email Status"
+                >
+                  <MenuItem value="ALL">All Email Status</MenuItem>
+                  <MenuItem value="true">Verified Only</MenuItem>
+                  <MenuItem value="false">Unverified Only</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Role</InputLabel>
+                <Select
+                  value={activeFilters.role || 'ALL'}
+                  onChange={(e) => {
+                    const value = e.target.value as Labels | 'ALL';
+                    setActiveFilters(prev => ({
+                      ...prev,
+                      role: value === 'ALL' ? undefined : value
+                    }));
+                  }}
+                  label="Role"
+                >
+                  <MenuItem value="ALL">All Roles</MenuItem>
+                  <MenuItem value="CUSTOMER">Customer</MenuItem>
+                  <MenuItem value="MANAGER">Manager</MenuItem>
+                  <MenuItem value="ADMIN">Admin</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Login Status</InputLabel>
+                <Select
+                  value={activeFilters.hasLoggedIn === undefined ? 'ALL' : activeFilters.hasLoggedIn.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setActiveFilters(prev => ({
+                      ...prev,
+                      hasLoggedIn: value === 'ALL' ? undefined : value === 'true'
+                    }));
+                  }}
+                  label="Login Status"
+                >
+                  <MenuItem value="ALL">All Users</MenuItem>
+                  <MenuItem value="true">Has Logged In</MenuItem>
+                  <MenuItem value="false">Never Logged In</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                label="Created After"
+                value={activeFilters.createdAfter || ''}
+                onChange={(e) => {
+                  setActiveFilters(prev => ({
+                    ...prev,
+                    createdAfter: e.target.value || undefined
+                  }));
+                }}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <CalendarToday fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                label="Created Before"
+                value={activeFilters.createdBefore || ''}
+                onChange={(e) => {
+                  setActiveFilters(prev => ({
+                    ...prev,
+                    createdBefore: e.target.value || undefined
+                  }));
+                }}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <CalendarToday fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Collapse>
       </Paper>
 
       {error && (
@@ -361,20 +642,134 @@ const UsersPage: React.FC = () => {
       )}
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search users by name or email..."
-          value={searchTerm}
-          onChange={(e: any) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search users by name, email, or phone..."
+            value={searchTerm}
+            onChange={(e: any) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="clear search"
+                    onClick={() => setSearchTerm('')}
+                    edge="end"
+                    size="small"
+                  >
+                    <Clear />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          {/* Active Filters Summary */}
+          {Object.keys(activeFilters).length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'fit-content' }}>
+              <FilterList color="primary" />
+              <Typography variant="body2" color="primary">
+                {Object.keys(activeFilters).length} filter{Object.keys(activeFilters).length > 1 ? 's' : ''} active
+              </Typography>
+            </Box>
+          )}
+        </Box>
+        
+        {/* Active Filter Tags */}
+        {Object.keys(activeFilters).length > 0 && (
+          <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {activeFilters.status !== undefined && (
+              <Chip
+                size="small"
+                label={`Status: ${activeFilters.status ? 'Active' : 'Inactive'}`}
+                onDelete={() => {
+                  setActiveFilters(prev => {
+                    const { status, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {activeFilters.isEmailVerified !== undefined && (
+              <Chip
+                size="small"
+                label={`Email: ${activeFilters.isEmailVerified ? 'Verified' : 'Unverified'}`}
+                onDelete={() => {
+                  setActiveFilters(prev => {
+                    const { isEmailVerified, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                color="warning"
+                variant="outlined"
+              />
+            )}
+            {activeFilters.role && (
+              <Chip
+                size="small"
+                label={`Role: ${activeFilters.role}`}
+                onDelete={() => {
+                  setActiveFilters(prev => {
+                    const { role, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                color="secondary"
+                variant="outlined"
+              />
+            )}
+            {activeFilters.hasLoggedIn !== undefined && (
+              <Chip
+                size="small"
+                label={`Login: ${activeFilters.hasLoggedIn ? 'Has logged in' : 'Never logged in'}`}
+                onDelete={() => {
+                  setActiveFilters(prev => {
+                    const { hasLoggedIn, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                color="info"
+                variant="outlined"
+              />
+            )}
+            {activeFilters.createdAfter && (
+              <Chip
+                size="small"
+                label={`After: ${new Date(activeFilters.createdAfter).toLocaleDateString()}`}
+                onDelete={() => {
+                  setActiveFilters(prev => {
+                    const { createdAfter, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                color="default"
+                variant="outlined"
+              />
+            )}
+            {activeFilters.createdBefore && (
+              <Chip
+                size="small"
+                label={`Before: ${new Date(activeFilters.createdBefore).toLocaleDateString()}`}
+                onDelete={() => {
+                  setActiveFilters(prev => {
+                    const { createdBefore, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                color="default"
+                variant="outlined"
+              />
+            )}
+          </Box>
+        )}
       </Paper>
 
       <TableContainer component={Paper}>
@@ -570,7 +965,8 @@ const UsersPage: React.FC = () => {
               required
               error={(() => {
                 const email = editFormData.email?.trim();
-                return !email || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+                if (!email) return true;
+                return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
               })()}
               helperText={
                 !editFormData.email?.trim() 
@@ -650,6 +1046,142 @@ const UsersPage: React.FC = () => {
             disabled={loading}
           >
             {loading ? 'Updating...' : 'Update User'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create New User Account</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Account Details
+            </Typography>
+            <TextField
+              label="Full Name"
+              value={createFormData.name}
+              onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+              fullWidth
+              required
+              error={!createFormData.name.trim()}
+              helperText={!createFormData.name.trim() ? 'Name is required' : undefined}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={createFormData.email}
+              onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
+              fullWidth
+              required
+              error={(() => {
+                const email = createFormData.email.trim();
+                if (!email) return true;
+                return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+              })()}
+              helperText={
+                !createFormData.email.trim() 
+                  ? 'Email is required' 
+                  : (createFormData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createFormData.email.trim()))
+                    ? 'Please enter a valid email address'
+                    : undefined
+              }
+            />
+            <TextField
+              label="Password"
+              type="password"
+              value={createFormData.password}
+              onChange={(e) => setCreateFormData({ ...createFormData, password: e.target.value })}
+              fullWidth
+              required
+              error={createFormData.password.length > 0 && createFormData.password.length < 8}
+              helperText={
+                !createFormData.password.trim()
+                  ? 'Password is required'
+                  : createFormData.password.length > 0 && createFormData.password.length < 8
+                    ? 'Password must be at least 8 characters long'
+                    : undefined
+              }
+            />
+            <TextField
+              label="Phone"
+              value={createFormData.phone}
+              onChange={(e) => setCreateFormData({ ...createFormData, phone: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Address"
+              value={createFormData.address}
+              onChange={(e) => setCreateFormData({ ...createFormData, address: e.target.value })}
+              fullWidth
+              multiline
+              rows={2}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Role</InputLabel>
+              <Select
+                value={createFormData.labels[0]}
+                onChange={(e) => setCreateFormData({ 
+                  ...createFormData, 
+                  labels: [e.target.value as Labels] 
+                })}
+                label="Role"
+              >
+                <MenuItem value="CUSTOMER">Customer</MenuItem>
+                <MenuItem value="MANAGER">Manager</MenuItem>
+                <MenuItem value="ADMIN">Admin</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={createFormData.status}
+                  onChange={(e) => setCreateFormData({ 
+                    ...createFormData, 
+                    status: e.target.checked 
+                  })}
+                />
+              }
+              label="Active Status"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={createFormData.isEmailVerified}
+                  onChange={(e) => setCreateFormData({ 
+                    ...createFormData, 
+                    isEmailVerified: e.target.checked 
+                  })}
+                />
+              }
+              label="Email Verified"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setCreateDialogOpen(false);
+              setCreateFormData({
+                name: '',
+                email: '',
+                password: '',
+                phone: '',
+                address: '',
+                labels: ['CUSTOMER'],
+                status: true,
+                isEmailVerified: false,
+              });
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleCreateUser} 
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? 'Creating...' : 'Create Account'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
   Card,
@@ -42,7 +42,7 @@ import {
   Avatar,
   Tooltip,
   LinearProgress,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
@@ -62,14 +62,14 @@ import {
   People as PeopleIcon,
   ShoppingCart as CartIcon,
   Refresh as RefreshIcon,
-} from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { OrderStatistics, useOrders } from '../../../hooks/Order';
-import { useAccount } from '../../../hooks/Account';
-import { useProducts } from '../../../hooks/Product';
-import { useDiscounts } from '../../../hooks/Discount';
+} from "@mui/icons-material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { OrderStatistics, useOrders } from "../../../hooks/Order";
+import { useAccount } from "../../../hooks/Account";
+import { useProducts } from "../../../hooks/Product";
+import { useDiscounts } from "../../../hooks/Discount";
 import {
   Order,
   OrderItem,
@@ -79,8 +79,8 @@ import {
   Currency,
   ShippingAddress,
   BillingAddress,
-} from '../../../lib/schema';
-import type { UserAccount } from '../../../hooks/Account';
+} from "../../../lib/schema";
+import type { UserAccount } from "../../../hooks/Account";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -104,9 +104,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface OrderFilters {
-  status: OrderStatus | 'ALL';
-  paymentStatus: PaymentStatus | 'ALL';
-  paymentMethod: PaymentMethod | 'ALL';
+  status: OrderStatus | "ALL";
+  paymentStatus: PaymentStatus | "ALL";
+  paymentMethod: PaymentMethod | "ALL";
   dateFrom: Date | null;
   dateTo: Date | null;
   searchTerm: string;
@@ -141,30 +141,36 @@ const AdminOrderPage: React.FC = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' | 'warning' });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info" as "info" | "success" | "error" | "warning",
+  });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
+  const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
   const [statistics, setStatistics] = useState<OrderStatistics | null>(null);
-  
+
   // Filters
   const [filters, setFilters] = useState<OrderFilters>({
-    status: 'ALL',
-    paymentStatus: 'ALL',
-    paymentMethod: 'ALL',
+    status: "ALL",
+    paymentStatus: "ALL",
+    paymentMethod: "ALL",
     dateFrom: null,
     dateTo: null,
-    searchTerm: '',
-    userId: '',
+    searchTerm: "",
+    userId: "",
   });
 
   // Debounced search function
   const debouncedSearch = useCallback((searchTerm: string) => {
     const timeoutId = setTimeout(() => {
-      setFilters(prev => ({ ...prev, searchTerm }));
+      setFilters((prev) => ({ ...prev, searchTerm }));
     }, 300);
-    
+
     return () => clearTimeout(timeoutId);
   }, []);
 
@@ -172,13 +178,9 @@ const AdminOrderPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        await Promise.all([
-          init(),
-          listUsers(),
-          loadStatistics(),
-        ]);
+        await Promise.all([init(), listUsers(), loadStatistics()]);
       } catch (error) {
-        showSnackbar('Failed to load data', 'error');
+        showSnackbar("Failed to load data", "error");
       }
     };
     loadData();
@@ -189,7 +191,7 @@ const AdminOrderPage: React.FC = () => {
       const stats = await getOrderStatistics();
       setStatistics(stats);
     } catch (error) {
-      console.error('Failed to load statistics:', error);
+      console.error("Failed to load statistics:", error);
     }
   };
 
@@ -198,7 +200,7 @@ const AdminOrderPage: React.FC = () => {
     // Helper to safely parse address if it's stored as a JSON string
     const parseAddress = (addr: any): { fullName?: string; phone?: string } => {
       if (!addr) return {};
-      if (typeof addr === 'string') {
+      if (typeof addr === "string") {
         try {
           return JSON.parse(addr);
         } catch {
@@ -208,19 +210,30 @@ const AdminOrderPage: React.FC = () => {
       return addr as any;
     };
 
-    return orders.filter(order => {
+    return orders.filter((order) => {
       // Status filter
-      if (filters.status !== 'ALL' && order.status !== filters.status) return false;
+      if (filters.status !== "ALL" && order.status !== filters.status)
+        return false;
 
       // Payment status filter
-      if (filters.paymentStatus !== 'ALL' && order.paymentStatus !== filters.paymentStatus) return false;
+      if (
+        filters.paymentStatus !== "ALL" &&
+        order.paymentStatus !== filters.paymentStatus
+      )
+        return false;
 
       // Payment method filter
-      if (filters.paymentMethod !== 'ALL' && order.paymentMethod !== filters.paymentMethod) return false;
+      if (
+        filters.paymentMethod !== "ALL" &&
+        order.paymentMethod !== filters.paymentMethod
+      )
+        return false;
 
       // Date filters
-      if (filters.dateFrom && new Date(order.createdAt) < filters.dateFrom) return false;
-      if (filters.dateTo && new Date(order.createdAt) > filters.dateTo) return false;
+      if (filters.dateFrom && new Date(order.createdAt) < filters.dateFrom)
+        return false;
+      if (filters.dateTo && new Date(order.createdAt) > filters.dateTo)
+        return false;
 
       // User filter (early exit to avoid extra processing)
       if (filters.userId && order.userId !== filters.userId) return false;
@@ -228,7 +241,9 @@ const AdminOrderPage: React.FC = () => {
       // Search term
       if (filters.searchTerm) {
         const term = filters.searchTerm.toLowerCase();
-        const { fullName = '', phone = '' } = parseAddress(order.shippingAddress);
+        const { fullName = "", phone = "" } = parseAddress(
+          order.shippingAddress
+        );
 
         return (
           order.orderCode.toLowerCase().includes(term) ||
@@ -249,7 +264,10 @@ const AdminOrderPage: React.FC = () => {
   }, [filteredOrders, page, rowsPerPage]);
 
   // Event handlers
-  const showSnackbar = (message: string, severity: 'info' | 'success' | 'error' | 'warning' = 'info') => {
+  const showSnackbar = (
+    message: string,
+    severity: "info" | "success" | "error" | "warning" = "info"
+  ) => {
     setSnackbar({ open: true, message, severity });
   };
 
@@ -260,49 +278,55 @@ const AdminOrderPage: React.FC = () => {
       setOrderItems(items);
       setOrderDialogOpen(true);
     } catch (error) {
-      showSnackbar('Failed to load order details', 'error');
+      showSnackbar("Failed to load order details", "error");
     }
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: OrderStatus
+  ) => {
     try {
       await updateOrderStatus(orderId, newStatus);
-      showSnackbar('Order status updated successfully', 'success');
+      showSnackbar("Order status updated successfully", "success");
       await refreshOrders();
       await loadStatistics();
     } catch (error) {
-      showSnackbar('Failed to update order status', 'error');
+      showSnackbar("Failed to update order status", "error");
     }
   };
 
-  const handlePaymentStatusChange = async (orderId: string, newStatus: PaymentStatus) => {
+  const handlePaymentStatusChange = async (
+    orderId: string,
+    newStatus: PaymentStatus
+  ) => {
     try {
       await updatePaymentStatus(orderId, newStatus);
-      showSnackbar('Payment status updated successfully', 'success');
+      showSnackbar("Payment status updated successfully", "success");
       await refreshOrders();
     } catch (error) {
-      showSnackbar('Failed to update payment status', 'error');
+      showSnackbar("Failed to update payment status", "error");
     }
   };
 
   const handleCancelOrder = async (orderId: string) => {
     try {
       await cancelOrder(orderId);
-      showSnackbar('Order cancelled successfully', 'success');
+      showSnackbar("Order cancelled successfully", "success");
       await refreshOrders();
       await loadStatistics();
     } catch (error) {
-      showSnackbar('Failed to cancel order', 'error');
+      showSnackbar("Failed to cancel order", "error");
     }
   };
 
   const handleRefundOrder = async (orderId: string, amount?: number) => {
     try {
       await refundOrder(orderId, amount);
-      showSnackbar('Order refunded successfully', 'success');
+      showSnackbar("Order refunded successfully", "success");
       await refreshOrders();
     } catch (error) {
-      showSnackbar('Failed to refund order', 'error');
+      showSnackbar("Failed to refund order", "error");
     }
   };
 
@@ -310,90 +334,127 @@ const AdminOrderPage: React.FC = () => {
     if (!selectedOrder) return;
     try {
       await deleteOrder(selectedOrder.$id);
-      showSnackbar('Order deleted successfully', 'success');
+      showSnackbar("Order deleted successfully", "success");
       setDeleteDialogOpen(false);
       setSelectedOrder(null);
       await refreshOrders();
       await loadStatistics();
     } catch (error) {
-      showSnackbar('Failed to delete order', 'error');
+      showSnackbar("Failed to delete order", "error");
     }
   };
 
   const handleBulkStatusUpdate = async (status: OrderStatus) => {
     try {
       await bulkUpdateOrderStatus(selectedOrders, status);
-      showSnackbar(`${selectedOrders.length} orders updated successfully`, 'success');
+      showSnackbar(
+        `${selectedOrders.length} orders updated successfully`,
+        "success"
+      );
       setSelectedOrders([]);
       setBulkMenuAnchor(null);
       await refreshOrders();
       await loadStatistics();
     } catch (error) {
-      showSnackbar('Failed to update orders', 'error');
+      showSnackbar("Failed to update orders", "error");
     }
   };
 
   const handleBulkDelete = async () => {
     try {
       await bulkDeleteOrders(selectedOrders);
-      showSnackbar(`${selectedOrders.length} orders deleted successfully`, 'success');
+      showSnackbar(
+        `${selectedOrders.length} orders deleted successfully`,
+        "success"
+      );
       setSelectedOrders([]);
       setBulkMenuAnchor(null);
       await refreshOrders();
       await loadStatistics();
     } catch (error) {
-      showSnackbar('Failed to delete orders', 'error');
+      showSnackbar("Failed to delete orders", "error");
     }
   };
 
-  const getStatusColor = (status: OrderStatus): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  const getStatusColor = (
+    status: OrderStatus
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "info"
+    | "success"
+    | "warning" => {
     switch (status) {
-      case 'PENDING': return 'warning';
-      case 'PROCESSING': return 'info';
-      case 'SHIPPED': return 'primary';
-      case 'DELIVERED': return 'success';
-      case 'CANCELLED': return 'error';
-      case 'REFUNDED': return 'secondary';
-      default: return 'default';
+      case "PENDING":
+        return "warning";
+      case "PROCESSING":
+        return "info";
+      case "SHIPPED":
+        return "primary";
+      case "DELIVERED":
+        return "success";
+      case "CANCELLED":
+        return "error";
+      case "REFUNDED":
+        return "secondary";
+      default:
+        return "default";
     }
   };
 
-  const getPaymentStatusColor = (status: PaymentStatus): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  const getPaymentStatusColor = (
+    status: PaymentStatus
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "info"
+    | "success"
+    | "warning" => {
     switch (status) {
-      case 'PENDING': return 'warning';
-      case 'PAID': return 'success';
-      case 'FAILED': return 'error';
-      case 'REFUNDED': return 'secondary';
-      case 'PARTIALLY_REFUNDED': return 'info';
-      default: return 'default';
+      case "PENDING":
+        return "warning";
+      case "PAID":
+        return "success";
+      case "FAILED":
+        return "error";
+      case "REFUNDED":
+        return "secondary";
+      case "PARTIALLY_REFUNDED":
+        return "info";
+      default:
+        return "default";
     }
   };
 
-  const formatCurrency = (amount: number, currency: Currency = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const formatCurrency = (amount: number, currency: Currency = "USD") => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency,
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getUserName = (userId: string) => {
     const user = users.find((u: UserAccount) => u.$id === userId);
-    return user?.name || 'Unknown User';
+    return user?.name || "Unknown User";
   };
 
   const getProductName = (productId: string) => {
-    const product = products.find(p => p.$id === productId);
-    return product?.name || 'Unknown Product';
+    const product = products.find((p) => p.$id === productId);
+    return product?.name || "Unknown Product";
   };
 
   const renderStatisticsCards = () => {
@@ -401,28 +462,28 @@ const AdminOrderPage: React.FC = () => {
 
     const cards = [
       {
-        title: 'Total Orders',
+        title: "Total Orders",
         value: statistics.totalOrders.toLocaleString(),
         icon: <OrderIcon />,
-        color: '#1976d2',
+        color: "#1976d2",
       },
       {
-        title: 'Total Revenue',
+        title: "Total Revenue",
         value: formatCurrency(statistics.totalRevenue),
         icon: <MoneyIcon />,
-        color: '#388e3c',
+        color: "#388e3c",
       },
       {
-        title: 'Pending Orders',
+        title: "Pending Orders",
         value: statistics.pendingOrders.toLocaleString(),
         icon: <TrendingUpIcon />,
-        color: '#f57c00',
+        color: "#f57c00",
       },
       {
-        title: 'Completed Orders',
+        title: "Completed Orders",
         value: statistics.completedOrders.toLocaleString(),
         icon: <CheckIcon />,
-        color: '#4caf50',
+        color: "#4caf50",
       },
     ];
 
@@ -432,9 +493,19 @@ const AdminOrderPage: React.FC = () => {
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <Box>
-                    <Typography color="textSecondary" gutterBottom variant="body2">
+                    <Typography
+                      color="textSecondary"
+                      gutterBottom
+                      variant="body2"
+                    >
                       {card.title}
                     </Typography>
                     <Typography variant="h5" component="div">
@@ -455,18 +526,22 @@ const AdminOrderPage: React.FC = () => {
 
   const renderFilters = () => (
     <Card sx={{ mb: 3 }}>
-      <CardHeader 
-        title="Filters" 
+      <CardHeader
+        title="Filters"
         action={
-          <IconButton onClick={() => setFilters({
-            status: 'ALL',
-            paymentStatus: 'ALL',
-            paymentMethod: 'ALL',
-            dateFrom: null,
-            dateTo: null,
-            searchTerm: '',
-            userId: '',
-          })}>
+          <IconButton
+            onClick={() =>
+              setFilters({
+                status: "ALL",
+                paymentStatus: "ALL",
+                paymentMethod: "ALL",
+                dateFrom: null,
+                dateTo: null,
+                searchTerm: "",
+                userId: "",
+              })
+            }
+          >
             <RefreshIcon />
           </IconButton>
         }
@@ -474,22 +549,27 @@ const AdminOrderPage: React.FC = () => {
       <CardContent>
         <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
-                         <TextField
-               fullWidth
-               label="Search"
-               placeholder="Order code, user ID, name, phone..."
-               onChange={(e) => debouncedSearch(e.target.value)}
-               InputProps={{
-                 startAdornment: <SearchIcon />,
-               }}
-             />
+            <TextField
+              fullWidth
+              label="Search"
+              placeholder="Order code, user ID, name, phone..."
+              onChange={(e) => debouncedSearch(e.target.value)}
+              InputProps={{
+                startAdornment: <SearchIcon />,
+              }}
+            />
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
                 value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as OrderStatus | 'ALL' }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    status: e.target.value as OrderStatus | "ALL",
+                  }))
+                }
               >
                 <MenuItem value="ALL">All Statuses</MenuItem>
                 <MenuItem value="PENDING">Pending</MenuItem>
@@ -506,14 +586,21 @@ const AdminOrderPage: React.FC = () => {
               <InputLabel>Payment Status</InputLabel>
               <Select
                 value={filters.paymentStatus}
-                onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value as PaymentStatus | 'ALL' }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    paymentStatus: e.target.value as PaymentStatus | "ALL",
+                  }))
+                }
               >
                 <MenuItem value="ALL">All Payment Statuses</MenuItem>
                 <MenuItem value="PENDING">Pending</MenuItem>
                 <MenuItem value="PAID">Paid</MenuItem>
                 <MenuItem value="FAILED">Failed</MenuItem>
                 <MenuItem value="REFUNDED">Refunded</MenuItem>
-                <MenuItem value="PARTIALLY_REFUNDED">Partially Refunded</MenuItem>
+                <MenuItem value="PARTIALLY_REFUNDED">
+                  Partially Refunded
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -522,7 +609,12 @@ const AdminOrderPage: React.FC = () => {
               <InputLabel>Payment Method</InputLabel>
               <Select
                 value={filters.paymentMethod}
-                onChange={(e) => setFilters(prev => ({ ...prev, paymentMethod: e.target.value as PaymentMethod | 'ALL' }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    paymentMethod: e.target.value as PaymentMethod | "ALL",
+                  }))
+                }
               >
                 <MenuItem value="ALL">All Methods</MenuItem>
                 <MenuItem value="COD">Cash on Delivery</MenuItem>
@@ -535,7 +627,9 @@ const AdminOrderPage: React.FC = () => {
               <InputLabel>User</InputLabel>
               <Select
                 value={filters.userId}
-                onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, userId: e.target.value }))
+                }
               >
                 <MenuItem value="">All Users</MenuItem>
                 {users.map((user: UserAccount) => (
@@ -547,30 +641,34 @@ const AdminOrderPage: React.FC = () => {
             </FormControl>
           </Grid>
         </Grid>
-                 <LocalizationProvider dateAdapter={AdapterDateFns}>
-           <Grid container spacing={2} sx={{ mt: 1 }}>
-             <Grid item xs={12} md={3}>
-               <DatePicker
-                 label="Date From"
-                 value={filters.dateFrom}
-                 onChange={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
-                 slotProps={{
-                   textField: { fullWidth: true }
-                 }}
-               />
-             </Grid>
-             <Grid item xs={12} md={3}>
-               <DatePicker
-                 label="Date To"
-                 value={filters.dateTo}
-                 onChange={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
-                 slotProps={{
-                   textField: { fullWidth: true }
-                 }}
-               />
-             </Grid>
-           </Grid>
-         </LocalizationProvider>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={3}>
+              <DatePicker
+                label="Date From"
+                value={filters.dateFrom}
+                onChange={(date) =>
+                  setFilters((prev) => ({ ...prev, dateFrom: date }))
+                }
+                slotProps={{
+                  textField: { fullWidth: true },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <DatePicker
+                label="Date To"
+                value={filters.dateTo}
+                onChange={(date) =>
+                  setFilters((prev) => ({ ...prev, dateTo: date }))
+                }
+                slotProps={{
+                  textField: { fullWidth: true },
+                }}
+              />
+            </Grid>
+          </Grid>
+        </LocalizationProvider>
       </CardContent>
     </Card>
   );
@@ -608,11 +706,19 @@ const AdminOrderPage: React.FC = () => {
               <TableRow>
                 <TableCell padding="checkbox">
                   <Checkbox
-                    indeterminate={selectedOrders.length > 0 && selectedOrders.length < paginatedOrders.length}
-                    checked={paginatedOrders.length > 0 && selectedOrders.length === paginatedOrders.length}
+                    indeterminate={
+                      selectedOrders.length > 0 &&
+                      selectedOrders.length < paginatedOrders.length
+                    }
+                    checked={
+                      paginatedOrders.length > 0 &&
+                      selectedOrders.length === paginatedOrders.length
+                    }
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedOrders(paginatedOrders.map(order => order.$id));
+                        setSelectedOrders(
+                          paginatedOrders.map((order) => order.$id)
+                        );
                       } else {
                         setSelectedOrders([]);
                       }
@@ -636,9 +742,11 @@ const AdminOrderPage: React.FC = () => {
                       checked={selectedOrders.includes(order.$id)}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedOrders(prev => [...prev, order.$id]);
+                          setSelectedOrders((prev) => [...prev, order.$id]);
                         } else {
-                          setSelectedOrders(prev => prev.filter(id => id !== order.$id));
+                          setSelectedOrders((prev) =>
+                            prev.filter((id) => id !== order.$id)
+                          );
                         }
                       }}
                     />
@@ -672,13 +780,13 @@ const AdminOrderPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Stack spacing={0.5}>
-                      <Chip
+                      {/* <Chip
                         label={order.paymentStatus}
                         color={getPaymentStatusColor(order.paymentStatus)}
                         size="small"
-                      />
+                      /> */}
                       <Typography variant="caption" color="textSecondary">
-                        {order.paymentMethod}
+                        {order.paymentMethod + ": " + order.paymentStatus}
                       </Typography>
                     </Stack>
                   </TableCell>
@@ -743,16 +851,27 @@ const AdminOrderPage: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Typography variant="h6">
               Order Details - {selectedOrder.orderCode}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={selectedOrder.status}
-                  onChange={(e) => handleStatusChange(selectedOrder.$id, e.target.value as OrderStatus)}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      selectedOrder.$id,
+                      e.target.value as OrderStatus
+                    )
+                  }
                 >
                   <MenuItem value="PENDING">Pending</MenuItem>
                   <MenuItem value="PROCESSING">Processing</MenuItem>
@@ -766,20 +885,30 @@ const AdminOrderPage: React.FC = () => {
                 <InputLabel>Payment</InputLabel>
                 <Select
                   value={selectedOrder.paymentStatus}
-                  onChange={(e) => handlePaymentStatusChange(selectedOrder.$id, e.target.value as PaymentStatus)}
+                  onChange={(e) =>
+                    handlePaymentStatusChange(
+                      selectedOrder.$id,
+                      e.target.value as PaymentStatus
+                    )
+                  }
                 >
                   <MenuItem value="PENDING">Pending</MenuItem>
                   <MenuItem value="PAID">Paid</MenuItem>
                   <MenuItem value="FAILED">Failed</MenuItem>
                   <MenuItem value="REFUNDED">Refunded</MenuItem>
-                  <MenuItem value="PARTIALLY_REFUNDED">Partially Refunded</MenuItem>
+                  <MenuItem value="PARTIALLY_REFUNDED">
+                    Partially Refunded
+                  </MenuItem>
                 </Select>
               </FormControl>
             </Box>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Tabs value={currentTab} onChange={(_, newValue) => setCurrentTab(newValue)}>
+          <Tabs
+            value={currentTab}
+            onChange={(_, newValue) => setCurrentTab(newValue)}
+          >
             <Tab label="General" />
             <Tab label="Items" />
             <Tab label="Shipping" />
@@ -793,25 +922,70 @@ const AdminOrderPage: React.FC = () => {
                   <CardHeader title="Order Information" />
                   <CardContent>
                     <Stack spacing={2}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Order Code:</Typography>
-                        <Typography variant="body2" fontWeight="bold">{selectedOrder.orderCode}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Order Code:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="bold">
+                          {selectedOrder.orderCode}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Customer:</Typography>
-                        <Typography variant="body2">{getUserName(selectedOrder.userId)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Customer:
+                        </Typography>
+                        <Typography variant="body2">
+                          {getUserName(selectedOrder.userId)}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Date:</Typography>
-                        <Typography variant="body2">{formatDate(selectedOrder.createdAt)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Date:
+                        </Typography>
+                        <Typography variant="body2">
+                          {formatDate(selectedOrder.createdAt)}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Payment Method:</Typography>
-                        <Typography variant="body2">{selectedOrder.paymentMethod}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Payment Method:
+                        </Typography>
+                        <Typography variant="body2">
+                          {selectedOrder.paymentMethod}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Currency:</Typography>
-                        <Typography variant="body2">{selectedOrder.currency}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Currency:
+                        </Typography>
+                        <Typography variant="body2">
+                          {selectedOrder.currency}
+                        </Typography>
                       </Box>
                     </Stack>
                   </CardContent>
@@ -822,26 +996,85 @@ const AdminOrderPage: React.FC = () => {
                   <CardHeader title="Order Summary" />
                   <CardContent>
                     <Stack spacing={2}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Subtotal:</Typography>
-                        <Typography variant="body2">{formatCurrency(selectedOrder.subtotal, selectedOrder.currency)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Subtotal:
+                        </Typography>
+                        <Typography variant="body2">
+                          {formatCurrency(
+                            selectedOrder.subtotal,
+                            selectedOrder.currency
+                          )}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Tax:</Typography>
-                        <Typography variant="body2">{formatCurrency(selectedOrder.taxAmount, selectedOrder.currency)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Tax:
+                        </Typography>
+                        <Typography variant="body2">
+                          {formatCurrency(
+                            selectedOrder.taxAmount,
+                            selectedOrder.currency
+                          )}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Discount:</Typography>
-                        <Typography variant="body2" color="success.main">-{formatCurrency(selectedOrder.discountTotal, selectedOrder.currency)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Discount:
+                        </Typography>
+                        <Typography variant="body2" color="success.main">
+                          -
+                          {formatCurrency(
+                            selectedOrder.discountTotal,
+                            selectedOrder.currency
+                          )}
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" color="textSecondary">Shipping:</Typography>
-                        <Typography variant="body2">{formatCurrency(selectedOrder.shippingAmount, selectedOrder.currency)}</Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography variant="body2" color="textSecondary">
+                          Shipping:
+                        </Typography>
+                        <Typography variant="body2">
+                          {formatCurrency(
+                            selectedOrder.shippingAmount,
+                            selectedOrder.currency
+                          )}
+                        </Typography>
                       </Box>
                       <Divider />
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
                         <Typography variant="h6">Total:</Typography>
-                        <Typography variant="h6" fontWeight="bold">{formatCurrency(selectedOrder.finalPrice, selectedOrder.currency)}</Typography>
+                        <Typography variant="h6" fontWeight="bold">
+                          {formatCurrency(
+                            selectedOrder.finalPrice,
+                            selectedOrder.currency
+                          )}
+                        </Typography>
                       </Box>
                     </Stack>
                   </CardContent>
@@ -869,9 +1102,18 @@ const AdminOrderPage: React.FC = () => {
                       <TableCell>{getProductName(item.productId)}</TableCell>
                       <TableCell>{item.productVariantId}</TableCell>
                       <TableCell align="right">{item.quantity}</TableCell>
-                      <TableCell align="right">{formatCurrency(item.unitPrice, selectedOrder.currency)}</TableCell>
-                      <TableCell align="right">{formatCurrency(item.discountAmount, selectedOrder.currency)}</TableCell>
-                      <TableCell align="right">{formatCurrency(item.total, selectedOrder.currency)}</TableCell>
+                      <TableCell align="right">
+                        {formatCurrency(item.unitPrice, selectedOrder.currency)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {formatCurrency(
+                          item.discountAmount,
+                          selectedOrder.currency
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        {formatCurrency(item.total, selectedOrder.currency)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -886,34 +1128,57 @@ const AdminOrderPage: React.FC = () => {
                   <CardHeader title="Shipping Address" />
                   <CardContent>
                     <Stack spacing={1}>
-                      <Typography variant="body2"><strong>{selectedOrder.shippingAddress.fullName}</strong></Typography>
-                      <Typography variant="body2">{selectedOrder.shippingAddress.phone}</Typography>
-                      <Typography variant="body2">{selectedOrder.shippingAddress.address}</Typography>
                       <Typography variant="body2">
-                        {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode}
+                        <strong>
+                          {selectedOrder.shippingAddress.fullName}
+                        </strong>
                       </Typography>
-                      <Typography variant="body2">{selectedOrder.shippingAddress.country}</Typography>
+                      <Typography variant="body2">
+                        {selectedOrder.shippingAddress.phone}
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedOrder.shippingAddress.address}
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedOrder.shippingAddress.city},{" "}
+                        {selectedOrder.shippingAddress.state}{" "}
+                        {selectedOrder.shippingAddress.postalCode}
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedOrder.shippingAddress.country}
+                      </Typography>
                     </Stack>
                   </CardContent>
                 </Card>
               </Grid>
-              {selectedOrder.billingAddress && !selectedOrder.billingAddress.sameAsShipping && (
-                <Grid item xs={12} md={6}>
-                  <Card>
-                    <CardHeader title="Billing Address" />
-                    <CardContent>
-                      <Stack spacing={1}>
-                        <Typography variant="body2"><strong>{selectedOrder.billingAddress.fullName}</strong></Typography>
-                        <Typography variant="body2">{selectedOrder.billingAddress.address}</Typography>
-                        <Typography variant="body2">
-                          {selectedOrder.billingAddress.city}, {selectedOrder.billingAddress.state} {selectedOrder.billingAddress.postalCode}
-                        </Typography>
-                        <Typography variant="body2">{selectedOrder.billingAddress.country}</Typography>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )}
+              {selectedOrder.billingAddress &&
+                !selectedOrder.billingAddress.sameAsShipping && (
+                  <Grid item xs={12} md={6}>
+                    <Card>
+                      <CardHeader title="Billing Address" />
+                      <CardContent>
+                        <Stack spacing={1}>
+                          <Typography variant="body2">
+                            <strong>
+                              {selectedOrder.billingAddress.fullName}
+                            </strong>
+                          </Typography>
+                          <Typography variant="body2">
+                            {selectedOrder.billingAddress.address}
+                          </Typography>
+                          <Typography variant="body2">
+                            {selectedOrder.billingAddress.city},{" "}
+                            {selectedOrder.billingAddress.state}{" "}
+                            {selectedOrder.billingAddress.postalCode}
+                          </Typography>
+                          <Typography variant="body2">
+                            {selectedOrder.billingAddress.country}
+                          </Typography>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
             </Grid>
           </TabPanel>
 
@@ -921,12 +1186,15 @@ const AdminOrderPage: React.FC = () => {
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Stack spacing={2}>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ display: "flex", gap: 2 }}>
                     <Button
                       variant="outlined"
                       color="warning"
                       onClick={() => handleCancelOrder(selectedOrder.$id)}
-                      disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'DELIVERED'}
+                      disabled={
+                        selectedOrder.status === "CANCELLED" ||
+                        selectedOrder.status === "DELIVERED"
+                      }
                     >
                       Cancel Order
                     </Button>
@@ -934,22 +1202,29 @@ const AdminOrderPage: React.FC = () => {
                       variant="outlined"
                       color="info"
                       onClick={() => handleRefundOrder(selectedOrder.$id)}
-                      disabled={selectedOrder.paymentStatus !== 'PAID'}
+                      disabled={selectedOrder.paymentStatus !== "PAID"}
                     >
                       Full Refund
                     </Button>
                     <Button
                       variant="outlined"
                       color="info"
-                      onClick={() => handleRefundOrder(selectedOrder.$id, selectedOrder.finalPrice / 2)}
-                      disabled={selectedOrder.paymentStatus !== 'PAID'}
+                      onClick={() =>
+                        handleRefundOrder(
+                          selectedOrder.$id,
+                          selectedOrder.finalPrice / 2
+                        )
+                      }
+                      disabled={selectedOrder.paymentStatus !== "PAID"}
                     >
                       Partial Refund (50%)
                     </Button>
                   </Box>
                   {selectedOrder.notes && (
                     <Box>
-                      <Typography variant="subtitle2" gutterBottom>Notes:</Typography>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Notes:
+                      </Typography>
                       <Typography variant="body2" color="textSecondary">
                         {selectedOrder.notes}
                       </Typography>
@@ -984,25 +1259,35 @@ const AdminOrderPage: React.FC = () => {
         open={Boolean(bulkMenuAnchor)}
         onClose={() => setBulkMenuAnchor(null)}
       >
-        <MenuItem onClick={() => handleBulkStatusUpdate('PROCESSING')}>
-          <ListItemIcon><CheckIcon /></ListItemIcon>
+        <MenuItem onClick={() => handleBulkStatusUpdate("PROCESSING")}>
+          <ListItemIcon>
+            <CheckIcon />
+          </ListItemIcon>
           <ListItemText>Mark as Processing</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleBulkStatusUpdate('SHIPPED')}>
-          <ListItemIcon><ShippingIcon /></ListItemIcon>
+        <MenuItem onClick={() => handleBulkStatusUpdate("SHIPPED")}>
+          <ListItemIcon>
+            <ShippingIcon />
+          </ListItemIcon>
           <ListItemText>Mark as Shipped</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleBulkStatusUpdate('DELIVERED')}>
-          <ListItemIcon><CheckIcon /></ListItemIcon>
+        <MenuItem onClick={() => handleBulkStatusUpdate("DELIVERED")}>
+          <ListItemIcon>
+            <CheckIcon />
+          </ListItemIcon>
           <ListItemText>Mark as Delivered</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleBulkStatusUpdate('CANCELLED')}>
-          <ListItemIcon><CancelIcon /></ListItemIcon>
+        <MenuItem onClick={() => handleBulkStatusUpdate("CANCELLED")}>
+          <ListItemIcon>
+            <CancelIcon />
+          </ListItemIcon>
           <ListItemText>Cancel Orders</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleBulkDelete} sx={{ color: 'error.main' }}>
-          <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
+        <MenuItem onClick={handleBulkDelete} sx={{ color: "error.main" }}>
+          <ListItemIcon>
+            <DeleteIcon color="error" />
+          </ListItemIcon>
           <ListItemText>Delete Orders</ListItemText>
         </MenuItem>
       </Menu>
@@ -1015,7 +1300,8 @@ const AdminOrderPage: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete order {selectedOrder?.orderCode}? This action cannot be undone.
+            Are you sure you want to delete order {selectedOrder?.orderCode}?
+            This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1030,9 +1316,12 @@ const AdminOrderPage: React.FC = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

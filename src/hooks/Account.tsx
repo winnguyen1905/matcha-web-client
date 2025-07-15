@@ -80,7 +80,8 @@ interface AccountContextType {
   // Admin
   users: UserAccount[];
   listUsers: () => Promise<void>;
-  searchUsers: (query: string) => Promise<void>;
+  searchUsers: (query: string | SearchFilters) => Promise<void>;
+  createUserAccount: (userData: CreateUserAccountData) => Promise<UserAccount>;
   updateUser: (userId: string, data: UpdateUserData) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   updateUserRole: (userId: string, role: Labels) => Promise<void>;
@@ -527,62 +528,121 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const searchUsers = useCallback(async (query: string): Promise<void> => {
+  const createUserAccount = useCallback(async (userData: CreateUserAccountData): Promise<UserAccount> => {
     try {
       setLoading(true);
       setError(null);
       
-      if (!query.trim()) {
+      const { name, email, password, phone, address, labels, status = true, isEmailVerified = false } = userData;
+      
+      // Validate required fields
+      if (!name.trim() || !email.trim() || !password.trim()) {
+        throw new Error('Name, email, and password are required');
+      }
+      
+      // Create Appwrite account
+      const accountData = await account.create(ID.unique(), email, password, name);
+      
+      // Create record in accounts collection
+      const accountRecord = {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone?.trim() || '',
+        address: address?.trim() || '',
+        status,
+        isEmailVerified,
+        labels,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: undefined,
+      };
+      
+      await databases.createDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        accountData.$id, // Use same ID as Auth user
+        accountRecord
+      );
+      
+      // Create user profile
+      const profileData: CreateUserInformation = {
+        userId: accountData.$id,
+        fullName: name.trim(),
+        phone: phone?.trim() || '',
+        addresses: [],
+        preferences: DEFAULT_PREFERENCES,
+        isActive: status,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      await databases.createDocument(
+        ENV.DATABASE_ID,
+        COLLECTIONS.USER_INFORMATION,
+        ID.unique(),
+        profileData
+      );
+      
+      // Return the created user account
+      const createdUser: UserAccount = {
+        $id: accountData.$id,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone?.trim() || '',
+        address: address?.trim() || '',
+        status,
+        isEmailVerified,
+        labels,
+        createdAt: accountRecord.createdAt,
+        lastLoginAt: undefined,
+      };
+      
+      // Refresh the user list
+      await listUsers();
+      
+      return createdUser;
+    } catch (error) {
+      const appwriteError = error as AppwriteException;
+      let errorMessage = 'Failed to create user account';
+      
+      if (appwriteError.type === 'user_already_exists') {
+        errorMessage = 'An account with this email already exists';
+      } else if (appwriteError.type === 'user_invalid_email') {
+        errorMessage = 'Please enter a valid email address';
+      } else if (appwriteError.type === 'user_password_policy_violation') {
+        errorMessage = 'Password does not meet requirements';
+      }
+      
+      setError(errorMessage);
+      console.error('Failed to create user account:', appwriteError);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [listUsers]);
+
+  const searchUsers = useCallback(async (searchQuery: string | SearchFilters): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // If no search query, return all users
+      if (typeof searchQuery === 'string' && !searchQuery.trim()) {
         await listUsers();
         return;
       }
       
-      // Build Appwrite queries for different search types
-      const queries: string[] = [];
+      let allUsers: UserAccount[];
       
-      // Handle specific filter queries from UI chips
-      if (query.includes('status.equal(true)')) {
-        queries.push(Query.equal('status', true));
-      } else if (query.includes('status.equal(false)')) {
-        queries.push(Query.equal('status', false));
-      } else if (query.includes('isEmailVerified.equal(true)')) {
-        queries.push(Query.equal('isEmailVerified', true));
-      } else if (query.includes('isEmailVerified.equal(false)')) {
-        queries.push(Query.equal('isEmailVerified', false));
-      } else if (query.includes('labels.contains("ADMIN")')) {
-        queries.push(Query.contains('labels', 'ADMIN'));
-      } else if (query.includes('labels.contains("MANAGER")')) {
-        queries.push(Query.contains('labels', 'MANAGER'));
-      } else if (query.includes('labels.contains("CUSTOMER")')) {
-        queries.push(Query.contains('labels', 'CUSTOMER'));
+      // Handle different types of search queries
+      if (typeof searchQuery === 'object') {
+        // Advanced filter object
+        allUsers = await performAdvancedSearch(searchQuery);
       } else {
-        // Text search in name and email
-        queries.push(Query.search('name', query));
-        // Note: Appwrite doesn't support OR queries easily, so we'll search name first
-        // In a production app, you might want to do separate queries and combine results
+        // Text search string
+        allUsers = await performTextSearch(searchQuery);
       }
       
-      const response = await databases.listDocuments(
-        ENV.DATABASE_ID,
-        COLLECTIONS.ACCOUNTS,
-        queries
-      );
-      
-      // Map database documents to UserAccount interface
-      const userAccounts: UserAccount[] = response.documents.map((doc): UserAccount => ({
-        $id: doc.$id,
-        name: doc.name || doc.fullName || 'Unknown User',
-        email: doc.email,
-        phone: doc.phone,
-        address: doc.address,
-        status: doc.status ?? true,
-        isEmailVerified: doc.isEmailVerified ?? false,
-        labels: Array.isArray(doc.labels) ? doc.labels : ['CUSTOMER'],
-        createdAt: doc.$createdAt || doc.createdAt,
-        lastLoginAt: doc.lastLoginAt,
-      }));
-      
-      setUsers(userAccounts);
+      setUsers(allUsers);
     } catch (err) {
       console.error('Failed to search users:', err);
       setError('Failed to search users');
@@ -592,6 +652,214 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   }, [listUsers]);
+
+  // Helper function for text search (name or email)
+  const performTextSearch = useCallback(async (query: string): Promise<UserAccount[]> => {
+    const trimmedQuery = query.trim().toLowerCase();
+    
+    try {
+      // Try multiple search approaches since Appwrite has limitations with OR queries
+      const searchPromises = [
+        // Search by name
+        databases.listDocuments(
+          ENV.DATABASE_ID,
+          COLLECTIONS.ACCOUNTS,
+          [Query.search('name', trimmedQuery)]
+        ).catch(() => ({ documents: [] })),
+        
+        // Search by email using contains (if search doesn't work)
+        databases.listDocuments(
+          ENV.DATABASE_ID,
+          COLLECTIONS.ACCOUNTS,
+          [Query.contains('email', trimmedQuery)]
+        ).catch(() => ({ documents: [] }))
+      ];
+      
+      const results = await Promise.all(searchPromises);
+      
+      // Combine and deduplicate results
+      const allDocs = [...results[0].documents, ...results[1].documents];
+      const uniqueDocs = Array.from(
+        new Map(allDocs.map(doc => [doc.$id, doc])).values()
+      );
+      
+      // If no server-side results, fall back to client-side filtering
+      if (uniqueDocs.length === 0) {
+        const allUsersResponse = await databases.listDocuments(
+          ENV.DATABASE_ID,
+          COLLECTIONS.ACCOUNTS
+        );
+        
+        const filteredDocs = allUsersResponse.documents.filter(doc => {
+          const name = (doc.name || doc.fullName || '').toLowerCase();
+          const email = (doc.email || '').toLowerCase();
+          return name.includes(trimmedQuery) || email.includes(trimmedQuery);
+        });
+        
+        return mapDocumentsToUsers(filteredDocs);
+      }
+      
+      return mapDocumentsToUsers(uniqueDocs);
+    } catch (error) {
+      console.error('Text search failed:', error);
+      // Fallback to client-side search
+      return performClientSideTextSearch(trimmedQuery);
+    }
+  }, []);
+
+  // Helper function for advanced filtering
+  const performAdvancedSearch = useCallback(async (filters: SearchFilters): Promise<UserAccount[]> => {
+    try {
+      const queries: string[] = [];
+      
+      // Add filters based on provided criteria
+      if (filters.status !== undefined) {
+        queries.push(Query.equal('status', filters.status));
+      }
+      
+      if (filters.isEmailVerified !== undefined) {
+        queries.push(Query.equal('isEmailVerified', filters.isEmailVerified));
+      }
+      
+      if (filters.role && filters.role !== 'ALL') {
+        queries.push(Query.contains('labels', filters.role));
+      }
+      
+      if (filters.createdAfter) {
+        queries.push(Query.greaterThan('createdAt', filters.createdAfter));
+      }
+      
+      if (filters.createdBefore) {
+        queries.push(Query.lessThan('createdAt', filters.createdBefore));
+      }
+      
+      if (filters.hasLoggedIn !== undefined) {
+        if (filters.hasLoggedIn) {
+          queries.push(Query.isNotNull('lastLoginAt'));
+        } else {
+          queries.push(Query.isNull('lastLoginAt'));
+        }
+      }
+      
+      const response = await databases.listDocuments(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS,
+        queries
+      );
+      
+      let users = mapDocumentsToUsers(response.documents);
+      
+      // Apply text search if provided
+      if (filters.searchText?.trim()) {
+        const searchText = filters.searchText.trim().toLowerCase();
+        users = users.filter(user => {
+          const name = user.name.toLowerCase();
+          const email = user.email.toLowerCase();
+          const phone = (user.phone || '').toLowerCase();
+          return name.includes(searchText) || email.includes(searchText) || phone.includes(searchText);
+        });
+      }
+      
+      return users;
+    } catch (error) {
+      console.error('Advanced search failed:', error);
+      // Fallback to client-side filtering
+      const allUsersResponse = await databases.listDocuments(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS
+      );
+      return performClientSideAdvancedSearch(mapDocumentsToUsers(allUsersResponse.documents), filters);
+    }
+  }, []);
+
+  // Client-side fallback for text search
+  const performClientSideTextSearch = useCallback(async (query: string): Promise<UserAccount[]> => {
+    try {
+      const response = await databases.listDocuments(
+        ENV.DATABASE_ID,
+        COLLECTIONS.ACCOUNTS
+      );
+      
+      const allUsers = mapDocumentsToUsers(response.documents);
+      return allUsers.filter(user => {
+        const name = user.name.toLowerCase();
+        const email = user.email.toLowerCase();
+        const phone = (user.phone || '').toLowerCase();
+        return name.includes(query) || email.includes(query) || phone.includes(query);
+      });
+    } catch (error) {
+      console.error('Client-side text search failed:', error);
+      return [];
+    }
+  }, []);
+
+  // Client-side fallback for advanced search
+  const performClientSideAdvancedSearch = useCallback((allUsers: UserAccount[], filters: SearchFilters): UserAccount[] => {
+    return allUsers.filter(user => {
+      // Status filter
+      if (filters.status !== undefined && user.status !== filters.status) {
+        return false;
+      }
+      
+      // Email verification filter
+      if (filters.isEmailVerified !== undefined && user.isEmailVerified !== filters.isEmailVerified) {
+        return false;
+      }
+      
+      // Role filter
+      if (filters.role && filters.role !== 'ALL' && !user.labels.includes(filters.role)) {
+        return false;
+      }
+      
+      // Date filters
+      if (filters.createdAfter && user.createdAt) {
+        const userDate = new Date(user.createdAt);
+        const filterDate = new Date(filters.createdAfter);
+        if (userDate <= filterDate) return false;
+      }
+      
+      if (filters.createdBefore && user.createdAt) {
+        const userDate = new Date(user.createdAt);
+        const filterDate = new Date(filters.createdBefore);
+        if (userDate >= filterDate) return false;
+      }
+      
+      // Login status filter
+      if (filters.hasLoggedIn !== undefined) {
+        const hasLoggedIn = !!user.lastLoginAt;
+        if (hasLoggedIn !== filters.hasLoggedIn) return false;
+      }
+      
+      // Text search
+      if (filters.searchText?.trim()) {
+        const searchText = filters.searchText.trim().toLowerCase();
+        const name = user.name.toLowerCase();
+        const email = user.email.toLowerCase();
+        const phone = (user.phone || '').toLowerCase();
+        if (!name.includes(searchText) && !email.includes(searchText) && !phone.includes(searchText)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, []);
+
+  // Helper function to map documents to user accounts
+  const mapDocumentsToUsers = useCallback((documents: any[]): UserAccount[] => {
+    return documents.map((doc): UserAccount => ({
+      $id: doc.$id,
+      name: doc.name || doc.fullName || 'Unknown User',
+      email: doc.email,
+      phone: doc.phone,
+      address: doc.address,
+      status: doc.status ?? true,
+      isEmailVerified: doc.isEmailVerified ?? false,
+      labels: Array.isArray(doc.labels) ? doc.labels : ['CUSTOMER'],
+      createdAt: doc.$createdAt || doc.createdAt,
+      lastLoginAt: doc.lastLoginAt,
+    }));
+  }, []);
 
   const updateUser = useCallback(async (userId: string, data: UpdateUserData): Promise<void> => {
     try {
@@ -1001,6 +1269,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     users,
     listUsers,
     searchUsers,
+    createUserAccount,
     updateUser,
     deleteUser,
     updateUserRole,
@@ -1013,7 +1282,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     addAddress, updateAddress, removeAddress, setDefaultAddress,
     getShippingAddresses, getBillingAddresses, getDefaultShippingAddress,
     refreshSession, getCurrentUser,
-    users, listUsers, searchUsers, updateUser, deleteUser, updateUserRole, updateUserStatus, verifyUserEmail, sendUserVerificationEmail
+    users, listUsers, searchUsers, createUserAccount, updateUser, deleteUser, updateUserRole, updateUserStatus, verifyUserEmail, sendUserVerificationEmail
   ]);
 
   // Auto-fetch user on mount
@@ -1049,3 +1318,24 @@ export interface UserAccount {
 }
 
 export type UpdateUserData = Partial<Omit<UserAccount, '$id'>>;
+
+export interface CreateUserAccountData {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  address?: string;
+  labels: Labels[];
+  status?: boolean;
+  isEmailVerified?: boolean;
+}
+
+export interface SearchFilters {
+  searchText?: string;
+  status?: boolean;
+  isEmailVerified?: boolean;
+  role?: Labels | 'ALL';
+  createdAfter?: string;
+  createdBefore?: string;
+  hasLoggedIn?: boolean;
+}
