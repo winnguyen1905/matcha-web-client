@@ -1,6 +1,6 @@
-# Matcha A Hiếu - Frontend
+# Matcha - Sencha
 
-A modern React-based e-commerce frontend for the Matcha A Hiếu tea store.
+A modern React-based e-commerce frontend for the Matcha tea store.
 
 ## Recent Updates
 
